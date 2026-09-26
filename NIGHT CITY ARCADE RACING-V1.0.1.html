@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NIGHT CITY ARCADE RACING: 邊緣行者：不歸之路</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans:wght@400;700;900&family=Noto+Sans+TC:wght@400;700;900&family=Noto+Sans+SC:wght@400;700;900&family=Noto+Sans+JP:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --cp-yellow: #FCEE0A; --cp-red: #FF003C; --cp-cyan: #00F0FF; --cp-dark: #050505;
+            --font-en: 'Orbitron', sans-serif;
+            --font-tc: 'Noto Sans TC', sans-serif;
+            --font-mono: 'Share Tech Mono', 'Noto Sans TC', sans-serif;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+        body { background-color: var(--cp-dark); color: var(--cp-cyan); font-family: var(--font-tc); overflow: hidden; height: 100vh; display: flex; justify-content: center; align-items: center; }
+        .hidden { display: none !important; }
+
+        .game-wrapper { position: relative; width: 100%; height: 100%; max-width: 1200px; aspect-ratio: 16/9; background: #070308; box-shadow: 0 0 50px rgba(0, 240, 255, 0.1); overflow: hidden; }
+        canvas { display: block; width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 5; }
+
+        .scanlines { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2)); background-size: 100% 4px; pointer-events: none; z-index: 10; opacity: 0.5; }
+        .vignette { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, rgba(0,0,0,0) 50%, rgba(0,0,0,0.95) 100%); pointer-events: none; z-index: 11; }
+
+        .cyber-grid-container { position: absolute; bottom: 0; left: 0; width: 100%; height: 50%; perspective: 600px; z-index: 2; pointer-events: none; background: linear-gradient(to bottom, transparent, rgba(255,0,255,0.05)); }
+        .grid-plane { position: absolute; bottom: -50%; left: -50%; width: 200%; height: 200%; background: linear-gradient(rgba(255, 0, 255, 0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 0, 255, 0.2) 1px, transparent 1px); background-size: 50px 50px; transform: rotateX(75deg); animation: grid-move 1s linear infinite; mask-image: linear-gradient(to bottom, transparent 0%, black 50%); -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 50%); }
+        @keyframes grid-move { 0% { background-position: 0 0; } 100% { background-position: 0 50px; } }
+
+        .synthwave-sun {
+            position: absolute; bottom: 25%; left: 50%; transform: translateX(-50%); width: 400px; height: 400px; border-radius: 50%;
+            background: linear-gradient(to bottom, #ffea00 0%, #ff0055 100%); z-index: 1; pointer-events: none;
+            -webkit-mask-image: linear-gradient(to bottom, black 0%, black 55%, transparent 55%, transparent 58%, black 58%, black 65%, transparent 65%, transparent 69%, black 69%, black 78%, transparent 78%, transparent 84%, black 84%, black 95%, transparent 95%, transparent 100%);
+            box-shadow: 0 0 80px rgba(255, 0, 85, 0.5); opacity: 0.9;
+        }
+
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 20; pointer-events: none; }
+        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(0, 0, 0, 0.85); pointer-events: auto; z-index: 25; }
+        .screen:not(.hidden) { animation: screenFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes screenFadeIn { 0% { opacity: 0; transform: scale(1.05); } 100% { opacity: 1; transform: scale(1); } }
+
+        #language-selector { position: absolute; top: 20px; right: 20px; z-index: 100; pointer-events: auto; }
+        #language-selector select { background: rgba(0,0,0,0.8); color: var(--cp-cyan); border: 1px solid var(--cp-cyan); padding: 5px 10px; font-family: var(--font-tc); outline: none; transition: 0.2s; cursor: pointer; transform: skewX(-5deg); }
+        #language-selector select:hover { box-shadow: 0 0 10px var(--cp-cyan); }
+
+        h1.cp-title { font-family: var(--font-en); color: var(--cp-yellow); font-size: 5rem; font-weight: 900; transform: skewX(-7deg); letter-spacing: -2px; text-shadow: 5px 5px 0px var(--cp-red), -5px -5px 0px var(--cp-cyan); z-index: 30; position: relative; text-align: center; line-height: 0.95; margin-bottom: 5px; }
+        .cp-subtitle { font-family: var(--font-tc); color: #000; background-color: var(--cp-yellow); font-size: 1.5rem; font-weight: 900; padding: 5px 30px; transform: skewX(-7deg); box-shadow: 4px 4px 0 var(--cp-cyan); margin-bottom: 50px; z-index: 30; position: relative; }
+
+        .cp-input { background: rgba(0, 240, 255, 0.1); border: 1px solid var(--cp-cyan); color: var(--cp-cyan); padding: 15px; font-size: 1.5rem; font-family: var(--font-mono); text-align: center; outline: none; margin-bottom: 20px; width: 300px; transform: skewX(-5deg); transition: 0.3s; }
+        .cp-input:focus { background: rgba(0, 240, 255, 0.2); box-shadow: 0 0 15px var(--cp-cyan); }
+
+        .cp-btn { background: transparent; border: 2px solid var(--cp-cyan); color: var(--cp-cyan); padding: 12px 30px; font-family: var(--font-tc); font-size: 1.2rem; font-weight: 900; cursor: pointer; position: relative; transition: all 0.2s; text-transform: uppercase; transform: skewX(-7deg); margin: 10px; pointer-events: auto; overflow: hidden; z-index: 30; }
+        .cp-btn:active { transform: skewX(-7deg) scale(0.95); }
+        .cp-btn::after { content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent); transform: skewX(-20deg); transition: 0.5s; }
+        .cp-btn:hover { background: var(--cp-cyan); color: #000; box-shadow: 0 0 15px var(--cp-cyan); }
+        .cp-btn:hover::after { left: 150%; }
+        .cp-btn.yellow { border-color: var(--cp-yellow); color: var(--cp-yellow); }
+        .cp-btn.yellow:hover { background: var(--cp-yellow); color: #000; box-shadow: 0 0 15px var(--cp-yellow); }
+        .cp-btn.red { border-color: var(--cp-red); color: var(--cp-red); }
+        .cp-btn.red:hover { background: var(--cp-red); color: #000; box-shadow: 0 0 15px var(--cp-red); }
+
+        #hud { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 15; padding: 20px; }
+        .hud-panel { position: absolute; font-family: var(--font-mono); background: rgba(0,0,0,0.6); border: 1px solid var(--cp-cyan); padding: 10px 15px; transform: skewX(-5deg); transition: transform 0.1s; }
+        .hud-top-left { top: 20px; left: 20px; width: 320px; border-left: 4px solid var(--cp-cyan); }
+        .hud-top-right { top: 20px; right: 20px; width: 320px; border-right: 4px solid var(--cp-red); }
+        
+        .stat-row { display: flex; align-items: center; margin-bottom: 8px; justify-content: space-between; }
+        .stat-label { font-size: 0.8rem; font-weight: bold; width: 70px; }
+        .bar-bg { flex: 1; height: 12px; background: rgba(255,255,255,0.1); margin-left: 10px; position: relative; }
+        .bar-fill { height: 100%; transition: width 0.1s linear; }
+        .bar-red { background: var(--cp-red); box-shadow: 0 0 10px var(--cp-red); }
+        .bar-cyan { background: var(--cp-cyan); box-shadow: 0 0 10px var(--cp-cyan); }
+        .ram-slots { display: flex; gap: 5px; margin-left: 10px; flex-wrap: wrap; }
+        .ram-slot { width: 15px; height: 10px; background: rgba(0, 240, 255, 0.2); border: 1px solid var(--cp-cyan); }
+        .ram-slot.active { background: var(--cp-cyan); box-shadow: 0 0 8px var(--cp-cyan); }
+        .p2-color .ram-slot { border: 1px solid var(--cp-red); background: rgba(255, 0, 60, 0.2); }
+        .p2-color .ram-slot.active { background: var(--cp-red); box-shadow: 0 0 8px var(--cp-red); }
+
+        .wanted-stars { color: #555; font-size: 1.2rem; letter-spacing: 2px; }
+        .wanted-stars .active { color: var(--cp-red); text-shadow: 0 0 10px var(--cp-red); }
+        .score-display { font-size: 1.5rem; color: var(--cp-yellow); font-family: var(--font-en); font-weight: 900; }
+        .combo-display { font-size: 1rem; color: #00F0FF; margin-top: 5px; text-shadow: 0 0 5px #00F0FF; font-weight: bold; transition: color 0.3s; }
+        
+        #btn-ingame-exit { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%) skewX(-7deg); padding: 5px 20px; font-size: 1rem; }
+
+        .grid-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 15px 0; max-height: 55vh; overflow-y: auto; padding: 15px; width: 70%; max-width: 900px; }
+        .grid-container::-webkit-scrollbar { width: 8px; } .grid-container::-webkit-scrollbar-track { background: rgba(0, 240, 255, 0.1); } .grid-container::-webkit-scrollbar-thumb { background: var(--cp-cyan); }
+        .car-card { border: 1px solid var(--cp-cyan); padding: 10px; cursor: pointer; background: rgba(0, 240, 255, 0.05); transform: skewX(-5deg); transition: 0.2s; display: flex; flex-direction: column; justify-content: space-between; }
+        .car-card:hover { background: rgba(0, 240, 255, 0.2); transform: skewX(-5deg) translateY(-5px); box-shadow: 0 5px 15px rgba(0, 240, 255, 0.3); }
+        .car-card.selected { border-color: var(--cp-yellow); box-shadow: 0 0 15px var(--cp-yellow); background: rgba(252, 238, 10, 0.1); }
+        .car-color-preview { width: 100%; height: 15px; margin-bottom: 10px; border: 1px solid #fff; }
+        .car-stats { font-family: var(--font-mono); font-size: 0.75rem; text-align: left; color: #ccc; margin-bottom: 10px; line-height: 1.4; }
+        .car-stats span { color: var(--cp-cyan); font-weight: bold; }
+        
+        #garage-sort-select { background: rgba(0,0,0,0.8); color: var(--cp-yellow); border: 1px solid var(--cp-yellow); padding: 8px; font-family: var(--font-tc); outline: none; margin-bottom: 10px; transform: skewX(-5deg); cursor: pointer; }
+
+        /* PVP Setup */
+        .pvp-setup-container { display: flex; justify-content: space-around; width: 80%; max-width: 800px; margin-bottom: 30px; }
+        .pvp-side { background: rgba(0,0,0,0.8); border: 2px solid; padding: 20px; width: 40%; text-align: center; transform: skewX(-5deg); }
+        .pvp-side.p1 { border-color: var(--cp-cyan); box-shadow: 0 0 15px rgba(0, 240, 255, 0.2); }
+        .pvp-side.p2 { border-color: var(--cp-red); box-shadow: 0 0 15px rgba(255, 0, 60, 0.2); }
+        .pvp-selector { display: flex; align-items: center; justify-content: space-between; margin: 15px 0; }
+        .pvp-btn { background: transparent; border: 1px solid #fff; color: #fff; padding: 5px 10px; cursor: pointer; }
+        .pvp-btn:hover { background: #fff; color: #000; }
+        
+        /* Leaderboard & Achievements */
+        .lb-table { width: 100%; max-width: 600px; border-collapse: collapse; font-family: var(--font-mono); transform: skewX(-2deg); background: rgba(0,0,0,0.8); border: 1px solid var(--cp-cyan); }
+        .lb-table th { background: var(--cp-cyan); color: #000; padding: 10px; text-align: center; }
+        .lb-table td { padding: 10px; border-bottom: 1px solid rgba(0,240,255,0.3); text-align: center; color: #fff; }
+        .lb-table tr:hover td { background: rgba(0,240,255,0.1); }
+        .lb-rank-1 { color: var(--cp-yellow) !important; font-weight: bold; text-shadow: 0 0 10px var(--cp-yellow); }
+        #garage-legend { position: absolute; bottom: 20px; right: 20px; background: rgba(0,0,0,0.8); border: 1px solid var(--cp-cyan); padding: 15px; font-size: 0.85rem; line-height: 1.6; max-width: 300px; text-align: left; transform: skewX(-5deg); font-family: var(--font-tc); }
+        
+        .achievements-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 80%; max-height: 60vh; overflow-y: auto; padding: 10px; }
+        .achievements-grid::-webkit-scrollbar { width: 8px; } .achievements-grid::-webkit-scrollbar-track { background: rgba(0, 240, 255, 0.1); } .achievements-grid::-webkit-scrollbar-thumb { background: var(--cp-yellow); }
+        .ach-card { border: 1px solid #333; padding: 10px; background: rgba(0,0,0,0.8); transform: skewX(-5deg); color: #555; display: flex; align-items: center; }
+        .ach-card.unlocked { border-color: var(--cp-yellow); color: #fff; background: rgba(252, 238, 10, 0.1); }
+        .ach-icon { font-size: 2rem; margin-right: 10px; filter: grayscale(100%); }
+        .ach-card.unlocked .ach-icon { filter: grayscale(0%); text-shadow: 0 0 10px var(--cp-yellow); }
+
+        #achievement-popup { position: absolute; top: 20px; left: 50%; transform: translateX(-50%) translateY(-150px); background: rgba(0,0,0,0.9); border: 2px solid var(--cp-yellow); color: #fff; padding: 15px 30px; font-family: var(--font-tc); z-index: 100; box-shadow: 0 0 20px var(--cp-yellow); text-align: center; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none; border-left: 10px solid var(--cp-yellow); }
+        #achievement-popup.show { transform: translateX(-50%) translateY(0); }
+        .game-over-title { font-family: var(--font-en); font-size: 4rem; color: var(--cp-red); font-weight: 900; text-shadow: 3px 3px 0 #fff; transform: skewX(-5deg); margin-bottom: 10px; }
+
+        /* Screen Shake & Intro Overlay */
+        @keyframes fullScreenShake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-3px, -2px) rotate(-1deg); }
+            20% { transform: translate(-1px, 3px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -3px) rotate(1deg); }
+            50% { transform: translate(-2px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(2px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -2px) rotate(1deg); }
+            90% { transform: translate(2px, 3px) rotate(0deg); }
+            100% { transform: translate(0, 0) rotate(0deg); }
+        }
+        .anim-shake { animation: fullScreenShake 0.25s cubic-bezier(.36,.07,.19,.97) both; }
+
+        #intro-showcase { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 80; display: flex; justify-content: center; align-items: center; flex-direction: column; opacity: 1; transition: opacity 0.3s ease; pointer-events: none; }
+        .intro-scanline { position: absolute; top: 0; left: 0; width: 100%; height: 5px; background: var(--cp-yellow); box-shadow: 0 0 20px var(--cp-yellow); animation: scanDown 2s linear forwards; }
+        @keyframes scanDown { 0% { top: 0; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+        .intro-text { font-family: var(--font-en); font-size: 3rem; color: #fff; font-weight: 900; transform: skewX(-5deg); letter-spacing: 5px; text-shadow: 0 0 10px var(--cp-cyan); animation: glitch 0.2s infinite; text-align: center; }
+        .intro-stats { font-family: var(--font-mono); font-size: 1.5rem; color: var(--cp-cyan); margin-top: 20px; }
+        
+        /* Custom Help Menu Scrollbar */
+        #help-menu-content::-webkit-scrollbar { width: 8px; } 
+        #help-menu-content::-webkit-scrollbar-track { background: rgba(0, 240, 255, 0.05); } 
+        #help-menu-content::-webkit-scrollbar-thumb { background: var(--cp-cyan); }
+    </style>
+</head>
+<body>
+
+    <div class="game-wrapper" id="main-wrapper">
+        <div class="synthwave-sun"></div>
+        <div class="scanlines"></div><div class="vignette"></div>
+        <div class="cyber-grid-container"><div class="grid-plane" id="grid-plane"></div></div>
+        <canvas id="gameCanvas"></canvas>
+
+        <div id="ui-layer">
+            <div id="language-selector">
+                <select id="lang-select">
+                    <option value="zh-TW">繁體中文</option>
+                    <option value="zh-CN">简体中文</option>
+                    <option value="en">English</option>
+                    <option value="ja">日本語</option>
+                </select>
+            </div>
+
+            <div id="achievement-popup">
+                <div style="color:var(--cp-yellow); font-size:0.8rem; font-weight:bold; margin-bottom:5px;" data-i18n="ach_unlocked">解鎖成就</div>
+                <div id="popup-title" style="font-size:1.5rem; font-weight:900;">名稱</div>
+            </div>
+
+            <div id="intro-showcase" class="hidden">
+                <div class="intro-scanline"></div>
+                <div class="intro-text" id="intro-name">VEHICLE DATA</div>
+                <div class="intro-stats" id="intro-stats">INITIALIZING...</div>
+            </div>
+
+            <!-- Menus -->
+            <div id="login-screen" class="screen">
+                <h1 class="cp-title" style="font-size: 3.5rem; margin-bottom: 20px;">SYSTEM LOGIN</h1>
+                <input type="text" id="player-name" class="cp-input" placeholder="ID" maxlength="12">
+                <div style="display: flex;">
+                    <button class="cp-btn yellow" id="btn-login" data-i18n="btn_login">登入 / 註冊</button>
+                    <button class="cp-btn" id="btn-guest" data-i18n="btn_guest">訪客連線</button>
+                </div>
+                <button class="cp-btn red" id="btn-format" style="margin-top: 50px; padding: 8px 20px; font-size: 0.9rem;" data-i18n="btn_format">格式化所有記憶體</button>
+            </div>
+
+            <div id="main-menu" class="screen hidden">
+                <div style="position:absolute; top:20px; left:20px; color:var(--cp-cyan); font-family:var(--font-mono);">
+                    <span data-i18n="lbl_profile">登入身分:</span> <span id="display-profile-name" style="color:var(--cp-yellow); font-weight:bold;"></span>
+                </div>
+                <!-- 標題拆分為兩行，並用霓虹青色做出對比與層次 -->
+                <h1 class="cp-title">
+                    NIGHT CITY<br>
+                    <span style="color: var(--cp-cyan); font-size: 0.6em; letter-spacing: 5px; text-shadow: 3px 3px 0px var(--cp-red), -3px -3px 0px var(--cp-dark);">ARCADE RACING</span>
+                </h1>
+                <div class="cp-subtitle" data-i18n="subtitle">邊緣行者：不歸之路</div>
+                
+                <div style="display: flex; margin-bottom:10px;">
+                    <button class="cp-btn yellow" id="btn-start" data-i18n="btn_solo">單人狂飆</button>
+                    <button class="cp-btn red" id="btn-pvp-setup" data-i18n="btn_pvp">雙人對決</button>
+                </div>
+                <div style="display: flex; flex-wrap: wrap; justify-content: center; max-width: 600px;">
+                    <button class="cp-btn" id="btn-garage" data-i18n="btn_garage">車庫</button>
+                    <button class="cp-btn" id="btn-achievements" data-i18n="btn_achieve">成就</button>
+                    <button class="cp-btn" id="btn-leaderboard" data-i18n="btn_leaderboard">排行榜</button>
+                </div>
+                <button class="cp-btn" id="btn-help" style="margin-top:10px;" data-i18n="btn_help">操作手冊</button>
+                <button class="cp-btn red" id="btn-logout" style="margin-top:20px; font-size:0.8rem; padding: 5px 15px;" data-i18n="btn_logout">登出</button>
+            </div>
+
+            <div id="pvp-setup-menu" class="screen hidden">
+                <h2 style="color: var(--cp-yellow); font-size: 2.5rem; transform: skewX(-5deg); margin-bottom: 20px;" data-i18n="pvp_title">雙人對決</h2>
+                <div class="pvp-setup-container">
+                    <div class="pvp-side p1">
+                        <h3 style="color:var(--cp-cyan); margin-bottom: 10px;">PLAYER 1</h3>
+                        <div class="car-color-preview" id="p1-color-preview" style="background-color: #fff;"></div>
+                        <div class="pvp-selector">
+                            <button class="pvp-btn" id="p1-prev">◀</button>
+                            <span id="p1-car-name" style="font-weight:bold; color:var(--cp-cyan);">CAR</span>
+                            <button class="pvp-btn" id="p1-next">▶</button>
+                        </div>
+                    </div>
+                    <div class="pvp-side p2">
+                        <h3 style="color:var(--cp-red); margin-bottom: 10px;">PLAYER 2</h3>
+                        <div class="car-color-preview" id="p2-color-preview" style="background-color: #fff;"></div>
+                        <div class="pvp-selector">
+                            <button class="pvp-btn" id="p2-prev">◀</button>
+                            <span id="p2-car-name" style="font-weight:bold; color:var(--cp-red);">CAR</span>
+                            <button class="pvp-btn" id="p2-next">▶</button>
+                        </div>
+                    </div>
+                </div>
+                <div style="display:flex;">
+                    <button class="cp-btn yellow" id="btn-pvp-start" data-i18n="btn_fight">開始對決</button>
+                    <button class="cp-btn" id="btn-pvp-back" data-i18n="btn_back">返回</button>
+                </div>
+            </div>
+
+            <div id="leaderboard-menu" class="screen hidden">
+                <h2 style="color: var(--cp-cyan); font-size: 2.5rem; transform: skewX(-5deg); margin-bottom: 20px;" data-i18n="lb_title">排行榜</h2>
+                <div style="max-height: 50vh; overflow-y: auto; width: 100%; display: flex; justify-content: center;">
+                    <table class="lb-table" id="lb-table">
+                        <thead><tr><th data-i18n="lb_rank">排名</th><th data-i18n="lb_name">代號</th><th data-i18n="lb_score">最高分數</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <button class="cp-btn" id="btn-lb-back" style="margin-top: 30px;" data-i18n="btn_back">返回</button>
+            </div>
+
+            <div id="help-menu" class="screen hidden">
+                <h2 style="color: var(--cp-yellow); font-size: 2rem; margin-bottom: 20px;" data-i18n="btn_help">操作手冊</h2>
+                <div id="help-menu-content" style="background: rgba(0,0,0,0.85); padding: 25px; border: 1px solid var(--cp-cyan); width: 85%; max-width: 800px; max-height: 60vh; overflow-y: auto; text-align: left; line-height: 1.6; font-size: 0.95rem; box-shadow: 0 0 20px rgba(0,240,255,0.1);">
+                    
+                    <h3 style="color: var(--cp-yellow); border-bottom: 1px solid var(--cp-yellow); padding-bottom: 5px; margin-bottom: 15px; font-weight: bold; letter-spacing: 1px;" data-i18n="help_bg_title">遊戲背景</h3>
+                    <p style="margin-bottom: 25px; color: #aaa; text-align: justify; border-left: 2px solid var(--cp-cyan); padding-left: 10px;" data-i18n="help_bg_desc">夜城沒有童話，只有活著的傳奇和垃圾場裡的無名屍。握緊方向盤，躲避 NCPD 的追緝，活下去。</p>
+                    
+                    <h3 style="color: var(--cp-yellow); border-bottom: 1px solid var(--cp-yellow); padding-bottom: 5px; margin-bottom: 15px; font-weight: bold; letter-spacing: 1px;" data-i18n="help_obj_title">遊戲目標</h3>
+                    <p style="margin-bottom: 25px; color: #aaa; text-align: justify; border-left: 2px solid var(--cp-cyan); padding-left: 10px;" data-i18n="help_obj_desc">狂飆、駭入、生存。在高速公路上極速穿梭，累積最高分數，成為排行榜上的頂尖邊緣行者。</p>
+                    
+                    <h3 style="color: var(--cp-yellow); border-bottom: 1px solid var(--cp-yellow); padding-bottom: 5px; margin-bottom: 15px; font-weight: bold; letter-spacing: 1px;" data-i18n="help_ctrl_title">操作方式</h3>
+                    <div style="display: flex; gap: 20px; margin-bottom: 25px; background: rgba(0,240,255,0.02); padding: 15px; border: 1px solid rgba(0,240,255,0.1);">
+                        <div style="flex:1;">
+                            <h4 style="color:var(--cp-cyan); margin-bottom:10px; font-family: var(--font-mono); border-bottom: 1px dashed var(--cp-cyan); display: inline-block;">[P1]</h4>
+                            <p><strong style="color:#fff;">W A S D</strong> - <span data-i18n="help_move">移動與加減速</span></p>
+                            <p><strong style="color:var(--cp-yellow);">Space</strong> - <span data-i18n="help_sandy">沙德威斯坦 (子彈時間)</span></p>
+                            <p><strong style="color:var(--cp-cyan);">L-Shift</strong> - <span data-i18n="help_hack">速駭 (EMP 摧毀警車)</span></p>
+                        </div>
+                        <div style="flex:1; border-left: 1px solid rgba(255,0,60,0.3); padding-left: 20px;">
+                            <h4 style="color:var(--cp-red); margin-bottom:10px; font-family: var(--font-mono); border-bottom: 1px dashed var(--cp-red); display: inline-block;">[P2]</h4>
+                            <p><strong style="color:#fff;">方向鍵</strong> - <span data-i18n="help_move">移動與加減速</span></p>
+                            <p><strong style="color:var(--cp-yellow);">Enter</strong> - <span data-i18n="help_sandy">沙德威斯坦 (子彈時間)</span></p>
+                            <p><strong style="color:var(--cp-red);">R-Shift</strong> - <span data-i18n="help_hack">速駭 (EMP 摧毀警車)</span></p>
+                        </div>
+                    </div>
+
+                    <h3 style="color: var(--cp-yellow); border-bottom: 1px solid var(--cp-yellow); padding-bottom: 5px; margin-bottom: 15px; font-weight: bold; letter-spacing: 1px;" data-i18n="help_upg_title">升級與解鎖</h3>
+                    <p style="margin-bottom: 15px; color: #aaa; text-align: justify; border-left: 2px solid var(--cp-cyan); padding-left: 10px;" data-i18n="help_upg_desc">在賽道上收集黃色晶片 (Credits)。回到車庫解鎖並配備更強大的車輛與神經組件。</p>
+                    <p style="margin-bottom: 25px; color: #aaa; text-align: justify; border-left: 2px solid #0066FF; padding-left: 10px;" data-i18n="help_ram_desc">收集藍色晶片 (RAM) 可恢復速駭點數，確保 EMP 能隨時應對 NCPD。</p>
+
+                    <div style="background: rgba(255,0,60,0.1); padding: 12px; border-left: 4px solid var(--cp-red);">
+                        <p style="color: #ff4444; font-weight: bold; margin:0;" data-i18n="help_desc1">[WARNING] 雙人模式下畫面將被一分為二，各自在平行宇宙中對決，直到一方陣亡！</p>
+                    </div>
+                </div>
+                <button class="cp-btn" id="btn-help-back" style="margin-top:20px;" data-i18n="btn_back">返回</button>
+            </div>
+
+            <div id="garage-menu" class="screen hidden">
+                <h2 style="color: var(--cp-cyan); font-size: 2.5rem; transform: skewX(-5deg);" data-i18n="garage_title">車庫</h2>
+                <div style="display:flex; justify-content: space-between; align-items:center; width: 70%; max-width: 900px; margin-bottom: 5px;">
+                    <h3 style="color: var(--cp-yellow);">CREDITS: $<span id="garage-credits">0</span></h3>
+                    <div>
+                        <select id="garage-sort-select">
+                            <option value="owned" data-i18n="sort_owned">依已擁有排序</option>
+                            <option value="speed" data-i18n="sort_speed">依速度排序</option>
+                            <option value="price" data-i18n="sort_price">依價格排序</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display:flex; width: 100%; max-width: 1200px; justify-content: center; gap: 20px;">
+                    <div class="grid-container" id="garage-grid"></div>
+                </div>
+                <div id="garage-legend">
+                    <div style="color: var(--cp-yellow); font-weight: bold; margin-bottom: 5px; font-size: 1rem;" data-i18n="legend_title">屬性說明</div>
+                    <div><span style="color:var(--cp-cyan); font-weight:bold;">SPD</span>: <span data-i18n="legend_spd">速度上限</span></div>
+                    <div><span style="color:var(--cp-cyan); font-weight:bold;">ACC</span>: <span data-i18n="legend_acc">加速度</span></div>
+                    <div><span style="color:var(--cp-cyan); font-weight:bold;">HP</span>: <span data-i18n="legend_hp">機體裝甲</span></div>
+                    <div><span style="color:var(--cp-cyan); font-weight:bold;">RAM</span>: <span data-i18n="legend_ram">記憶體上限</span></div>
+                </div>
+                <button class="cp-btn" id="btn-garage-back" style="margin-top: 10px;" data-i18n="btn_back">返回</button>
+            </div>
+
+            <div id="achievements-menu" class="screen hidden">
+                <h2 style="color: var(--cp-yellow); font-size: 2.5rem; transform: skewX(-5deg);" data-i18n="btn_achieve">成就</h2>
+                <div style="color:var(--cp-cyan); margin-bottom:15px;"><span data-i18n="ach_progress">解鎖進度</span>: <span id="ach-progress">0/15</span></div>
+                <div class="achievements-grid" id="achievements-grid"></div>
+                <button class="cp-btn" id="btn-ach-back" style="margin-top:20px;" data-i18n="btn_back">返回</button>
+            </div>
+
+            <div id="hud" class="hidden">
+                <div class="hud-panel hud-top-left" id="hud-p1">
+                    <div style="color:var(--cp-cyan); margin-bottom:5px; font-weight:bold;">PLAYER 1</div>
+                    <div class="stat-row"><div class="stat-label" style="color:var(--cp-cyan);" data-i18n="hud_hp">機體裝甲</div><div class="bar-bg"><div class="bar-fill bar-cyan" id="hp-bar-p1" style="width: 100%;"></div></div></div>
+                    <div class="stat-row"><div class="stat-label" style="color:var(--cp-yellow);" data-i18n="hud_sandy">沙德威斯坦</div><div class="bar-bg"><div class="bar-fill bar-yellow" id="sandy-bar-p1" style="width: 100%; background:var(--cp-yellow); box-shadow:0 0 10px var(--cp-yellow);"></div></div></div>
+                    <div class="stat-row"><div class="stat-label" style="color:#00F0FF;" data-i18n="hud_ram">速駭 RAM</div><div class="ram-slots" id="ram-container-p1"></div></div>
+                    <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:10px;">
+                        <div>
+                            <div style="font-size:1.5rem; font-weight:bold;"><span id="speed-display-p1">0</span> <span style="font-size:0.8rem; color:#aaa;">KM/H</span></div>
+                            <div class="combo-display" id="combo-display-p1">MULTI x1.0</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div class="wanted-stars" id="wanted-stars-p1" style="font-size:1rem; margin-bottom:2px;">★ ★ ★ ★ ★</div>
+                            <div class="score-display" id="score-display-p1" style="font-size:1.2rem;">000000</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hud-panel hud-top-right p2-color hidden" id="hud-p2">
+                    <div style="color:var(--cp-red); margin-bottom:5px; font-weight:bold; text-align:right;">PLAYER 2</div>
+                    <div class="stat-row"><div class="bar-bg" style="margin-left:0; margin-right:10px;"><div class="bar-fill bar-red" id="hp-bar-p2" style="width: 100%;"></div></div><div class="stat-label" style="color:var(--cp-red); text-align:right;" data-i18n="hud_hp">機體裝甲</div></div>
+                    <div class="stat-row"><div class="bar-bg" style="margin-left:0; margin-right:10px;"><div class="bar-fill bar-yellow" id="sandy-bar-p2" style="width: 100%; background:var(--cp-yellow); box-shadow:0 0 10px var(--cp-yellow);"></div></div><div class="stat-label" style="color:var(--cp-yellow); text-align:right;" data-i18n="hud_sandy">沙德威斯坦</div></div>
+                    <div class="stat-row"><div class="ram-slots" id="ram-container-p2" style="margin-left:0; margin-right:10px; justify-content:flex-end;"></div><div class="stat-label" style="color:#FF003C; text-align:right;" data-i18n="hud_ram">速駭 RAM</div></div>
+                    <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:10px; flex-direction: row-reverse;">
+                        <div style="text-align: right;">
+                            <div style="font-size:1.5rem; font-weight:bold; color:var(--cp-red);"><span id="speed-display-p2">0</span> <span style="font-size:0.8rem; color:#aaa;">KM/H</span></div>
+                            <div class="combo-display" id="combo-display-p2" style="color:#FF003C; text-shadow:0 0 5px #FF003C;">MULTI x1.0</div>
+                        </div>
+                        <div style="text-align:left;">
+                            <div class="wanted-stars" id="wanted-stars-p2" style="font-size:1rem; margin-bottom:2px;">★ ★ ★ ★ ★</div>
+                            <div class="score-display" id="score-display-p2" style="font-size:1.2rem; color:var(--cp-red);">000000</div>
+                        </div>
+                    </div>
+                </div>
+                <button class="cp-btn red" id="btn-ingame-exit" data-i18n="btn_abort">中斷</button>
+            </div>
+
+            <div id="game-over-screen" class="screen hidden">
+                <div class="game-over-title" id="game-over-text">神機錯亂</div>
+                <div id="final-score-container" style="font-size: 1.5rem; margin-bottom: 30px; font-family: var(--font-mono);"></div>
+                <div>
+                    <button class="cp-btn yellow" id="btn-restart" data-i18n="btn_reboot">重新連線</button>
+                    <button class="cp-btn red" id="btn-quit" data-i18n="btn_mainmenu">主系統</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Web Audio API System
+        const AudioSys = {
+            ctx: null, engineOsc: null, engineGain: null, isInit: false,
+            init() {
+                if (this.isInit) return;
+                try {
+                    window.AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioContext();
+                    this.engineOsc = this.ctx.createOscillator();
+                    this.engineOsc.type = 'sawtooth';
+                    this.engineGain = this.ctx.createGain();
+                    this.engineGain.gain.value = 0;
+                    this.engineOsc.connect(this.engineGain).connect(this.ctx.destination);
+                    this.engineOsc.start();
+                    this.isInit = true;
+                } catch(e) { console.log("Web Audio API not supported", e); }
+            },
+            updateEngine(maxSpeed) {
+                if (!this.isInit || !this.ctx || this.ctx.state !== 'running') return;
+                if (maxSpeed < 0 || isNaN(maxSpeed)) maxSpeed = 0;
+                let targetFreq = 40 + (maxSpeed * 0.4); 
+                let targetVol = maxSpeed > 20 ? 0.05 + (maxSpeed/1000)*0.1 : 0;
+                this.engineOsc.frequency.setTargetAtTime(targetFreq, this.ctx.currentTime, 0.1);
+                this.engineGain.gain.setTargetAtTime(targetVol, this.ctx.currentTime, 0.2);
+            },
+            stopEngine() {
+                if(!this.isInit || !this.ctx) return;
+                this.engineGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.1);
+            },
+            playEMP() {
+                if (!this.isInit || !this.ctx) return;
+                let osc = this.ctx.createOscillator(); let gain = this.ctx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(10, this.ctx.currentTime + 0.6);
+                gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.6);
+                osc.connect(gain).connect(this.ctx.destination);
+                osc.start(); osc.stop(this.ctx.currentTime + 0.6);
+            },
+            playCrash() {
+                if (!this.isInit || !this.ctx) return;
+                let bufferSize = this.ctx.sampleRate * 0.3; // 300ms noise
+                let buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                let data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) { data[i] = Math.random() * 2 - 1; }
+                let noise = this.ctx.createBufferSource(); noise.buffer = buffer;
+                let noiseFilter = this.ctx.createBiquadFilter(); noiseFilter.type = 'lowpass'; noiseFilter.frequency.value = 800;
+                let noiseGain = this.ctx.createGain();
+                noiseGain.gain.setValueAtTime(0.4, this.ctx.currentTime);
+                noiseGain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
+                noise.connect(noiseFilter).connect(noiseGain).connect(this.ctx.destination);
+                noise.start();
+            },
+            playAchievement() {
+                if (!this.isInit || !this.ctx) return;
+                const notes = [440, 554, 659, 880]; // A major arpeggio
+                notes.forEach((freq, i) => {
+                    let osc = this.ctx.createOscillator(); let gain = this.ctx.createGain();
+                    osc.type = 'sine'; osc.frequency.value = freq;
+                    gain.gain.setValueAtTime(0, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(0.1, this.ctx.currentTime + i*0.1);
+                    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + i*0.1 + 0.3);
+                    osc.connect(gain).connect(this.ctx.destination);
+                    osc.start(this.ctx.currentTime + i*0.1); osc.stop(this.ctx.currentTime + i*0.1 + 0.4);
+                });
+            }
+        };
+
+        // Initialize Audio on first document interaction to bypass browser auto-play policy
+        document.body.addEventListener('click', () => { 
+            AudioSys.init(); 
+            if(AudioSys.ctx && AudioSys.ctx.state === 'suspended') AudioSys.ctx.resume();
+        }, {once: true});
+
+        const dict = {
+            'zh-TW': {
+                btn_login: '登入 / 註冊', btn_guest: '訪客連線', btn_format: '格式化所有記憶體',
+                confirm_format: '警告：這將會永久刪除所有存檔資料，確定要格式化記憶體嗎？', format_done: '記憶體已格式化。',
+                lbl_profile: '登入身分:', subtitle: '邊緣行者：不歸之路', btn_solo: '單人狂飆', btn_pvp: '雙人對決',
+                btn_garage: '車庫', btn_achieve: '成就', btn_leaderboard: '排行榜',
+                btn_help: '操作手冊', btn_logout: '登出',
+                pvp_title: '雙人對決', btn_fight: '開始對決', btn_back: '返回',
+                lb_title: '排行榜', lb_rank: '排名', lb_name: '代號', lb_score: '最高分數',
+                help_bg_title: '遊戲背景', help_bg_desc: '夜城沒有童話，只有活著的傳奇和垃圾場裡的無名屍。握緊方向盤，躲避 NCPD 的追緝，活下去。',
+                help_obj_title: '遊戲目標', help_obj_desc: '狂飆、駭入、生存。在高速公路上極速穿梭，累積最高分數，成為排行榜上的頂尖邊緣行者。',
+                help_ctrl_title: '操作方式', help_upg_title: '升級與解鎖', help_upg_desc: '在賽道上收集黃色晶片 (Credits)。回到車庫解鎖並配備更強大的車輛與神經組件。',
+                help_ram_desc: '收集藍色晶片 (RAM) 可恢復速駭點數，確保 EMP 能隨時應對 NCPD。',
+                help_move: '移動與加減速', help_sandy: '沙德威斯坦 (子彈時間)', help_hack: '速駭 (EMP 摧毀警車)', help_desc1: '[WARNING] 雙人模式下畫面將被一分為二，各自在平行宇宙中對決，直到一方陣亡！',
+                garage_title: '車庫', legend_title: '屬性說明', legend_spd: '速度上限', legend_acc: '加速度', legend_hp: '機體裝甲', legend_ram: '記憶體上限',
+                ach_progress: '解鎖進度', ach_unlocked: '解鎖成就',
+                hud_hp: '機體裝甲', hud_sandy: '沙德威斯坦', hud_ram: '速駭 RAM', btn_abort: '中斷',
+                final_score: '最終分數', btn_reboot: '重新連線', btn_mainmenu: '主系統',
+                buy: '解鎖', equipped: '已配備', guest_no_buy: '訪客無法解鎖', guest_profile: '訪客 (不保留紀錄)',
+                go_draw: '平局 (雙方陣亡)', go_p2_wins: 'PLAYER 2 獲勝', go_p1_wins: 'PLAYER 1 獲勝', go_sys_fail: '神機錯亂', p1_final: 'P1 最終分數:', p2_final: 'P2 最終分數:',
+                sort_owned: '依已擁有排序', sort_speed: '依速度排序', sort_price: '依價格排序'
+            },
+            'zh-CN': {
+                btn_login: '登录 / 注册', btn_guest: '访客连线', btn_format: '格式化所有记忆体',
+                confirm_format: '警告：这将会永久删除所有存档资料，确定要格式化记忆体吗？', format_done: '记忆体已格式化。',
+                lbl_profile: '登录身份:', subtitle: '边缘行者：不归之路', btn_solo: '单人狂飙', btn_pvp: '双人对决',
+                btn_garage: '车库', btn_achieve: '成就', btn_leaderboard: '排行榜',
+                btn_help: '操作手册', btn_logout: '登出',
+                pvp_title: '双人对决', btn_fight: '开始对决', btn_back: '返回',
+                lb_title: '排行榜', lb_rank: '排名', lb_name: '代号', lb_score: '最高分数',
+                help_bg_title: '游戏背景', help_bg_desc: '夜城没有童话，只有活着的传奇和垃圾场里的无名尸。握紧方向盘，躲避 NCPD 的追缉，活下去。',
+                help_obj_title: '游戏目标', help_obj_desc: '狂飙、骇入、生存。在高速公路上极速穿梭，累积最高分数，成为排行榜上的顶尖边缘行者。',
+                help_ctrl_title: '操作方式', help_upg_title: '升级与解锁', help_upg_desc: '在赛道上收集黄色芯片 (Credits)。回到车库解锁并配备更强大的车辆与神经组件。',
+                help_ram_desc: '收集蓝色芯片 (RAM) 可恢复速骇点数，确保 EMP 能随时应对 NCPD。',
+                help_move: '移动与加减速', help_sandy: '斯安威斯坦 (子弹时间)', help_hack: '速骇 (EMP 摧毁警车)', help_desc1: '[WARNING] 双人模式下画面将被一分为二，各自在平行宇宙中对决，直到一方阵亡！',
+                garage_title: '车库', legend_title: '属性说明', legend_spd: '速度上限', legend_acc: '加速度', legend_hp: '机体装甲', legend_ram: '内存上限',
+                ach_progress: '解锁进度', ach_unlocked: '解锁成就',
+                hud_hp: '机体装甲', hud_sandy: '斯安威斯坦', hud_ram: '速骇 RAM', btn_abort: '中断',
+                final_score: '最终分数', btn_reboot: '重新连线', btn_mainmenu: '主系统',
+                buy: '解锁', equipped: '已配备', guest_no_buy: '访客无法解锁', guest_profile: '访客 (不保留纪录)',
+                go_draw: '平局 (双方阵亡)', go_p2_wins: 'PLAYER 2 获胜', go_p1_wins: 'PLAYER 1 获胜', go_sys_fail: '神机错乱', p1_final: 'P1 最终分数:', p2_final: 'P2 最终分数:',
+                sort_owned: '依已拥有排序', sort_speed: '依速度排序', sort_price: '依价格排序'
+            },
+            'en': {
+                btn_login: 'LOGIN / REGISTER', btn_guest: 'GUEST PLAY', btn_format: 'FORMAT MEMORY (DELETE ALL)',
+                confirm_format: 'WARNING: This will permanently delete all save data. Format memory?', format_done: 'Memory formatted.',
+                lbl_profile: 'LOGGED IN AS:', subtitle: 'EDGERUNNERS: POINT OF NO RETURN', btn_solo: 'SOLO DRIVE', btn_pvp: 'VERSUS (PVP)',
+                btn_garage: 'GARAGE', btn_achieve: 'ACHIEVEMENTS', btn_leaderboard: 'LEADERBOARD',
+                btn_help: 'MANUAL', btn_logout: 'LOGOUT',
+                pvp_title: 'VERSUS SETUP', btn_fight: 'START FIGHT', btn_back: 'BACK',
+                lb_title: 'LEADERBOARD', lb_rank: 'RANK', lb_name: 'ID', lb_score: 'HIGH SCORE',
+                help_bg_title: 'BACKGROUND', help_bg_desc: 'In this corporate-controlled Night City, you either become a legend or a nameless corpse. Grip the wheel, evade the NCPD, and survive.',
+                help_obj_title: 'OBJECTIVES', help_obj_desc: 'Speed, hack, survive. Weave through traffic at breakneck speeds to rack up points and become a top Edgerunner.',
+                help_ctrl_title: 'HOW TO PLAY', help_upg_title: 'UPGRADES', help_upg_desc: 'Collect yellow Credit shards on the road and visit the GARAGE to buy and equip stronger rides and cyberware.',
+                help_ram_desc: 'Collect blue shards (RAM) to restore your quickhack memory, ensuring your EMP is ready for the NCPD.',
+                help_move: 'Move & Accelerate', help_sandy: 'Sandevistan (Slow-mo)', help_hack: 'Quickhack (EMP Blast)', help_desc1: '[WARNING] Split-screen PVP. Survive longer than your opponent in parallel dimensions!',
+                garage_title: 'GARAGE', legend_title: 'STATS', legend_spd: 'Top Speed', legend_acc: 'Acceleration', legend_hp: 'Integrity', legend_ram: 'Max RAM',
+                ach_progress: 'UNLOCKED', ach_unlocked: 'ACHIEVEMENT UNLOCKED',
+                hud_hp: 'INTEGRITY', hud_sandy: 'SANDEVISTAN', hud_ram: 'QUICKHACK RAM', btn_abort: 'ABORT',
+                final_score: 'FINAL SCORE', btn_reboot: 'REBOOT', btn_mainmenu: 'MAIN MENU',
+                buy: 'UNLOCK', equipped: 'EQUIPPED', guest_no_buy: 'GUEST CANNOT UNLOCK', guest_profile: 'GUEST (NO SAVE)',
+                go_draw: 'DRAW (BOTH DEAD)', go_p2_wins: 'PLAYER 2 WINS', go_p1_wins: 'PLAYER 1 WINS', go_sys_fail: 'SYSTEM FAILURE', p1_final: 'P1 FINAL SCORE:', p2_final: 'P2 FINAL SCORE:',
+                sort_owned: 'Sort: Owned', sort_speed: 'Sort: Speed', sort_price: 'Sort: Price'
+            },
+            'ja': {
+                btn_login: 'ログイン / 登録', btn_guest: 'ゲストプレイ', btn_format: '全データ削除 (FORMAT)',
+                confirm_format: '警告：すべてのセーブデータを完全に削除します。フォーマットしますか？', format_done: 'フォーマット完了。',
+                lbl_profile: 'ログイン:', subtitle: 'エッジランナーズ：帰還不能点', btn_solo: 'ソロドライブ', btn_pvp: '対戦 (PVP)',
+                btn_garage: 'ガレージ', btn_achieve: '実績', btn_leaderboard: 'ランキング',
+                btn_help: 'マニュアル', btn_logout: 'ログアウト',
+                pvp_title: '対戦セットアップ', btn_fight: 'バトル開始', btn_back: '戻る',
+                lb_title: 'ランキング', lb_rank: '順位', lb_name: '名前', lb_score: 'ハイスコア',
+                help_bg_title: 'ゲーム背景', help_bg_desc: '企業に支配されたナイトシティでは、伝説になるか、名もなき死体になるかだ。ハンドルを握り、NCPDを振り切り、生き延びろ。',
+                help_obj_title: '目的', help_obj_desc: '暴走、ハッキング、生存。トップスピードで駆け抜け、最高のスコアを獲得し、殿堂入りのエッジランナーになれ。',
+                help_ctrl_title: '操作方法', help_upg_title: 'アップグレード', help_upg_desc: '道中で黄色のクレジットチップを集め、ガレージでより強力な車両やサイバーウェアを購入・装備しよう。',
+                help_ram_desc: '青色のチップ(RAM)を回収してクイックハックメモリを回復し、NCPDに常にEMPで備えろ。',
+                help_move: '移動と加減速', help_sandy: 'サンデヴィスタン (スロー)', help_hack: 'クイックハック (EMP攻撃)', help_desc1: '[WARNING] PVPでは画面が2分割され、どちらかが倒れるまで並行宇宙で戦います！',
+                garage_title: 'ガレージ', legend_title: 'ステータス', legend_spd: '最高速度', legend_acc: '加速度', legend_hp: '装甲耐久', legend_ram: '最大RAM',
+                ach_progress: '解除状況', ach_unlocked: '実績解除',
+                hud_hp: '装甲耐久', hud_sandy: 'サンデヴィスタン', hud_ram: 'RAM', btn_abort: '中断',
+                final_score: '最終スコア', btn_reboot: '再起動', btn_mainmenu: 'メインメニュー',
+                buy: 'ロック解除', equipped: '装備中', guest_no_buy: 'ゲスト購入不可', guest_profile: 'ゲスト (保存なし)',
+                go_draw: '引き分け (相打ち)', go_p2_wins: 'PLAYER 2 の勝利', go_p1_wins: 'PLAYER 1 の勝利', go_sys_fail: 'システムエラー', p1_final: 'P1 最終スコア:', p2_final: 'P2 最終スコア:',
+                sort_owned: '並べ替え: 所有', sort_speed: '並べ替え: 速度', sort_price: '並べ替え: 価格'
+            }
+        };
+
+        let currentLang = 'zh-TW';
+        const FONT_MAP = { 'zh-TW': "'Noto Sans TC', sans-serif", 'zh-CN': "'Noto Sans SC', sans-serif", 'en': "'Noto Sans', sans-serif", 'ja': "'Noto Sans JP', sans-serif" };
+        
+        function setLanguage(lang) {
+            currentLang = lang; document.documentElement.lang = lang;
+            const cjkFont = FONT_MAP[lang] || FONT_MAP['zh-TW'];
+            document.documentElement.style.setProperty('--font-tc', cjkFont);
+            document.documentElement.style.setProperty('--font-mono', `'Share Tech Mono', ${cjkFont}`);
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n'); if (dict[lang] && dict[lang][key]) el.innerText = dict[lang][key];
+            });
+            if (isGuest && document.getElementById('display-profile-name').innerText.includes("訪客")) { document.getElementById('display-profile-name').innerText = dict[lang]['guest_profile']; }
+            if (!document.getElementById('garage-menu').classList.contains('hidden')) renderGarage();
+            if (!document.getElementById('achievements-menu').classList.contains('hidden')) renderAchievements();
+            if (!document.getElementById('pvp-setup-menu').classList.contains('hidden')) updatePvpSetupUI();
+        }
+
+        let globalData = JSON.parse(localStorage.getItem('cp_data_v6')) || { profiles: {} };
+        let currentProfileName = null; let gameData = null; let isGuest = false; let gameMode = 'single'; 
+        let animFrameId = null; 
+        const DEFAULT_PROFILE = { credits: 0, ownedCars: ['david'], selectedCar: 'david', achievements: [], highScore: 0 };
+
+        function saveData() {
+            if (isGuest || !currentProfileName || !gameData) return;
+            globalData.profiles[currentProfileName] = gameData;
+            localStorage.setItem('cp_data_v6', JSON.stringify(globalData));
+        }
+
+        function formatMemory() {
+            if(confirm(dict[currentLang]['confirm_format'])) {
+                localStorage.removeItem('cp_data_v6'); globalData = { profiles: {} };
+                alert(dict[currentLang]['format_done']); location.reload(); 
+            }
+        }
+
+        const CARS = {
+            david:   { name: 'DAVID // 閃電沙德', color: '#EAE133', price: 0,     speed: 360, accel: 300, hp: 100, ram: 3, drain: 40, regen: 10 },
+            lucy:    { name: 'LUCY // 竄網使者', color: '#E6E6FA', price: 80,    speed: 370, accel: 320, hp: 60,  ram: 6, drain: 45, regen: 12 },
+            rebecca: { name: 'REBECCA // 雙槍火炮', color: '#39FF14', price: 150,   speed: 350, accel: 380, hp: 80,  ram: 2, drain: 50, regen: 8 },
+            maine:   { name: 'MAINE // 鐵腕領袖', color: '#D2691E', price: 250,   speed: 320, accel: 250, hp: 160, ram: 2, drain: 60, regen: 5 },
+            dorio:   { name: 'DORIO // 狂暴碎擊', color: '#FF8C00', price: 400,   speed: 330, accel: 260, hp: 140, ram: 2, drain: 50, regen: 8 },
+            kiwi:    { name: 'KIWI // 猩紅駭客', color: '#FF1493', price: 650,   speed: 350, accel: 300, hp: 80,  ram: 7, drain: 50, regen: 10 },
+            pilar:   { name: 'PILAR // 科技神手', color: '#00FF00', price: 1000,  speed: 360, accel: 310, hp: 100, ram: 5, drain: 40, regen: 15 },
+            faraday: { name: 'FARADAY // 企業特務', color: '#4B0082', price: 1500,  speed: 380, accel: 350, hp: 120, ram: 4, drain: 35, regen: 12 },
+            smasher: { name: 'ADAM SMASHER // 重裝機甲', color: '#8B0000', price: 2200,  speed: 420, accel: 280, hp: 250, ram: 2, drain: 80, regen: 5 }
+        };
+
+        const CAR_I18N = {
+            'zh-TW': { david:'DAVID // 閃電沙德', lucy:'LUCY // 竄網使者', rebecca:'REBECCA // 雙槍火炮', maine:'MAINE // 鐵腕領袖', dorio:'DORIO // 狂暴碎擊', kiwi:'KIWI // 猩紅駭客', pilar:'PILAR // 科技神手', faraday:'FARADAY // 企業特務', smasher:'ADAM SMASHER // 重裝機甲' },
+            'zh-CN': { david:'DAVID // 闪电桑德', lucy:'LUCY // 窜网使者', rebecca:'REBECCA // 双枪火炮', maine:'MAINE // 铁腕领袖', dorio:'DORIO // 狂暴碎击', kiwi:'KIWI // 猩红黑客', pilar:'PILAR // 科技神手', faraday:'FARADAY // 企业特工', smasher:'ADAM SMASHER // 重装机甲' },
+            'en':    { david:'DAVID // LIGHTNING RUNNER', lucy:'LUCY // NETRUNNER GHOST', rebecca:'REBECCA // TWIN CANNONS', maine:'MAINE // IRON-WILL LEADER', dorio:'DORIO // BERSERKER', kiwi:'KIWI // CRIMSON HACKER', pilar:'PILAR // TECH WIZARD', faraday:'FARADAY // CORPO AGENT', smasher:'ADAM SMASHER // HEAVY MECH' },
+            'ja':    { david:'DAVID // 電光サンデヴィスタン', lucy:'LUCY // 竄網の使者', rebecca:'REBECCA // 双銃の火砲', maine:'MAINE // 鉄腕のリーダー', dorio:'DORIO // 狂暴粉砕者', kiwi:'KIWI // 深紅のハッカー', pilar:'PILAR // テックの達人', faraday:'FARADAY // 企業のエージェント', smasher:'ADAM SMASHER // 重装機兵' }
+        };
+        
+        function getCarName(key) { 
+            if (!key || !CARS[key]) return "UNKNOWN CAR";
+            return (CAR_I18N[currentLang] && CAR_I18N[currentLang][key]) || CARS[key].name; 
+        }
+
+        const ACHIEVEMENTS = {
+            'first_blood': { icon: '🔰', name: '踏入夜城', desc: '第一次啟動引擎' }, 'speed_demon': { icon: '⚡', name: '渦輪狂熱', desc: '速度突破 380 km/h' },
+            'time_lord':   { icon: '⏳', name: '邊緣行者', desc: '單局使用沙德威斯坦累積 10 秒' }, 'netrunner':   { icon: '💻', name: '竄網使者', desc: '單局使用 EMP 速駭 5 次' },
+            'cyberpsycho': { icon: '💀', name: '快來！鎮靜特勤組', desc: '單局摧毀 10 輛 NCPD 警車' }, 'corpo_rich':  { icon: '💰', name: '荒坂高階主管', desc: '持有超過 5,000 Credits' },
+            'collector':   { icon: '🚘', name: '大主顧', desc: '解鎖 5 輛車' }, 'legend':      { icon: '👑', name: '來生酒吧常客', desc: '解鎖所有車輛' },
+            'near_death':  { icon: '❤️‍🩹', name: '創傷小組白金會員', desc: '血量低於 15 點並繼續存活' }, 'untouched':   { icon: '🛡️', name: '無暇神機', desc: '無傷達到 10,000 分' },
+            'bumper':      { icon: '💥', name: '三寶駕駛', desc: '單局撞擊 3 輛平民車' }, 'road_killer': { icon: '🔥', name: '惡地狂飆', desc: '單局分數突破 50,000 分' },
+            'shard_hunter':{ icon: '💠', name: '拾荒者', desc: '單局拾取 20 個黃色晶片' }, 'matrix':      { icon: '🔌', name: '黑牆深潛', desc: '保持滿 RAM 狀態超過 30 秒' },
+            'system_crash':{ icon: '🚨', name: '聖多明哥的無名屍', desc: '在 5 星通緝下被 NCPD 摧毀' }
+        };
+
+        const ACH_I18N = {
+            'zh-CN': {
+                first_blood:{name:'踏入夜城',desc:'第一次启动引擎'}, speed_demon:{name:'涡轮狂热',desc:'速度突破 380 km/h'},
+                time_lord:{name:'边缘行者',desc:'单局使用桑德维斯坦累积 10 秒'}, netrunner:{name:'窜网使者',desc:'单局使用 EMP 速骇 5 次'},
+                cyberpsycho:{name:'快来！暴恐机动队',desc:'单局摧毁 10 辆 NCPD 警车'}, corpo_rich:{name:'荒坂高管',desc:'持有超过 5,000 Credits'},
+                collector:{name:'大主顾',desc:'解锁 5 辆车'}, legend:{name:'来生酒吧常客',desc:'解锁所有车辆'},
+                near_death:{name:'创伤小组白金会员',desc:'血量低于 15 点并继续存活'}, untouched:{name:'无暇神机',desc:'无伤达到 10,000 分'},
+                bumper:{name:'马路杀手',desc:'单局撞击 3 辆平民车'}, road_killer:{name:'恶地狂飙',desc:'单局分数突破 50,000 分'},
+                shard_hunter:{name:'清道夫',desc:'单局拾取 20 个黄色芯片'}, matrix:{name:'黑墙深潜',desc:'保持满 RAM 状态超过 30 秒'},
+                system_crash:{name:'圣多明哥的无名尸',desc:'在 5 星通缉下被 NCPD 摧毁'}
+            },
+            'en': {
+                first_blood:{name:'NIGHT CITY NEWBIE',desc:'Start your engine for the first time'}, speed_demon:{name:'TURBO FEVER',desc:'Break 380 km/h'},
+                time_lord:{name:'EDGERUNNER',desc:'Accumulate 10s of Sandevistan in one run'}, netrunner:{name:'NETRUNNER',desc:'Use EMP Quickhack 5 times in one run'},
+                cyberpsycho:{name:'MAXTAC DEPLOYED!',desc:'Destroy 10 NCPD cruisers in one run'}, corpo_rich:{name:'ARASAKA EXEC',desc:'Hold over 5,000 Credits'},
+                collector:{name:'VIP',desc:'Unlock 5 cars'}, legend:{name:'AFTERLIFE REGULAR',desc:'Unlock every car'},
+                near_death:{name:'TRAUMA TEAM PLATINUM',desc:'Survive with HP below 15'}, untouched:{name:'FLAWLESS CHROME',desc:'Reach 10,000 pts without taking damage'},
+                bumper:{name:'ROAD HAZARD',desc:'Hit 3 civilian cars in one run'}, road_killer:{name:'BADLANDS DRIFTER',desc:'Break 50,000 pts in one run'},
+                shard_hunter:{name:'SCAVENGER',desc:'Collect 20 yellow chips in one run'}, matrix:{name:'BLACKWALL DIVE',desc:'Stay at max RAM for 30s'},
+                system_crash:{name:'ANOTHER BODY IN SANTO',desc:'Destroyed by NCPD at 5-star wanted level'}
+            },
+            'ja': {
+                first_blood:{name:'ナイトシティへようこそ',desc:'初めてエンジンを始動する'}, speed_demon:{name:'ターボフィーバー',desc:'速度 380km/h 突破'},
+                time_lord:{name:'エッジランナー',desc:'1回でサンデヴィスタン累計10秒使用'}, netrunner:{name:'ネットランナー',desc:'1回でEMPクイックハックを5回使用'},
+                cyberpsycho:{name:'マックスタック出動！',desc:'1回でNCPDパトカーを10台破壊'}, corpo_rich:{name:'アラサカの幹部',desc:'5,000クレジット以上保有'},
+                collector:{name:'VIP',desc:'車を5台解除'}, legend:{name:'アフターライフの伝説',desc:'全車両解除'},
+                near_death:{name:'トラウマ・チームVIP',desc:'HP15以下で生存継続'}, untouched:{name:'完璧なクローム',desc:'ノーダメージで10,000点到達'},
+                bumper:{name:'当たり屋',desc:'1回で民間車に3回衝突'}, road_killer:{name:'バッドランズ・ドリフター',desc:'1回で50,000点突破'},
+                shard_hunter:{name:'スカベンジャー',desc:'1回で黄色チップを20個回収'}, matrix:{name:'ブラックウォール・ダイブ',desc:'RAM満タン状態を30秒維持'},
+                system_crash:{name:'サントドミンゴの名もなき死体',desc:'5つ星指名手配中にNCPDに破壊される'}
+            }
+        };
+        function getAchText(id) { return (ACH_I18N[currentLang] && ACH_I18N[currentLang][id]) || ACHIEVEMENTS[id]; }
+        
+        let width, height; let isRunning = false; let lastTime = 0; let keys = {};
+        window.addEventListener('keydown', e => keys[e.code] = true); window.addEventListener('keyup', e => keys[e.code] = false);
+
+        const LANES = 4; const FRICTION = 0.95; const VISUAL_SPEED_MULT = 6; let worlds = [];
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d', {alpha: false}); 
+
+        class GameWorld {
+            constructor(id, controls, carKey, vpWidth, offsetX) {
+                this.id = id; this.vpWidth = vpWidth; this.offsetX = offsetX;
+                const stats = CARS[carKey];
+                this.player = {
+                    lane: 1, x: 0, targetX: 0, speed: 0, dead: false, color: id === 2 ? '#FF003C' : stats.color,
+                    maxSpeed: stats.speed, accel: stats.accel, maxHp: stats.hp, hp: stats.hp, maxRam: stats.ram, ram: stats.ram,
+                    sandyDrain: stats.drain, sandyRegen: stats.regen, maxSandy: 100, sandy: 100, isSandyActive: false,
+                    afterimages: [], empCooldown: 0, movingLane: false, width: 0, height: 0, y: 0,
+                    laneTime: 0, scoreMultiplier: 1.0 
+                };
+                this.recalcPlayerX(); this.player.x = this.player.targetX; this.player.y = height - this.player.height - 40; 
+                this.controls = controls; this.obstacles = []; this.pickups = []; this.particles = [];
+                this.roadOffset = 0; this.score = 0; this.wantedLevel = 0; this.spawnTimer = 0; this.empFlashAlpha = 0;
+                this.crashSlowMoTimer = 0; 
+                this.runStats = { sandyTime: 0, empUses: 0, ncpdKills: 0, civHits: 0, creditsGot: 0, maxRamTime: 0, diedToNcpd5Star: false };
+                this.updateUI_RAM();
+            }
+            updateUI_RAM() {
+                const ramContainer = document.getElementById(`ram-container-p${this.id}`);
+                if(ramContainer) {
+                    ramContainer.innerHTML = '';
+                    for(let i=0; i<this.player.maxRam; i++) { let div = document.createElement('div'); div.className = 'ram-slot active'; ramContainer.appendChild(div); }
+                }
+            }
+            recalcPlayerX() {
+                const laneW = (this.vpWidth * 0.7) / LANES; this.player.width = laneW * 0.5; this.player.height = this.player.width * 1.8;
+                this.player.targetX = ((this.vpWidth - this.vpWidth * 0.7) / 2) + (this.player.lane * laneW) + (laneW/2) - (this.player.width/2);
+            }
+            createExplosion(x, y, color) { for(let i=0; i<30; i++) this.particles.push(new Particle(x, y, color)); }
+            
+            update(dtReal) {
+                if (this.player.dead) return; 
+                let p = this.player;
+                
+                let timeScale = 1.0;
+                if (this.crashSlowMoTimer > 0) {
+                    timeScale = 0.2; 
+                    this.crashSlowMoTimer -= dtReal;
+                }
+                let dt = dtReal * timeScale;
+
+                if (keys[this.controls.up]) p.speed += p.accel * dt; else p.speed *= Math.pow(FRICTION, dt * 60);
+                if (keys[this.controls.down]) p.speed -= (p.accel * 1.5) * dt; p.speed = Math.max(0, Math.min(p.speed, p.maxSpeed));
+                
+                let laneChanged = false;
+                if (keys[this.controls.left] && p.lane > 0 && !p.movingLane) { p.lane--; p.movingLane = true; laneChanged = true; setTimeout(() => p.movingLane = false, 100); }
+                if (keys[this.controls.right] && p.lane < LANES-1 && !p.movingLane) { p.lane++; p.movingLane = true; laneChanged = true; setTimeout(() => p.movingLane = false, 100); }
+                
+                if (laneChanged || p.speed < 100) {
+                    p.laneTime = 0; p.scoreMultiplier = 1.0;
+                } else {
+                    p.laneTime += dt;
+                    p.scoreMultiplier = Math.min(3.0, 1.0 + Math.floor(p.laneTime / 2) * 0.5); 
+                }
+
+                this.recalcPlayerX(); p.x += (p.targetX - p.x) * Math.min(30 * dt, 1);
+
+                if (keys[this.controls.sandy] && p.sandy > 0) {
+                    p.isSandyActive = true; dt *= 0.2; p.sandy -= p.sandyDrain * dtReal; this.runStats.sandyTime += dtReal;
+                    if (Math.random() < 0.5) p.afterimages.push({x: p.x, y: p.y, alpha: 0.5});
+                } else { p.isSandyActive = false; if (p.sandy < p.maxSandy) p.sandy += p.sandyRegen * dtReal; }
+                for (let i = p.afterimages.length - 1; i >= 0; i--) { p.afterimages[i].alpha -= 2 * dtReal; if (p.afterimages[i].alpha <= 0) p.afterimages.splice(i, 1); }
+
+                if (p.empCooldown > 0) p.empCooldown -= dtReal;
+                if (keys[this.controls.hack] && p.ram > 0 && p.empCooldown <= 0) {
+                    p.ram--; p.empCooldown = 0.5; this.empFlashAlpha = 1.0; this.runStats.empUses++;
+                    AudioSys.playEMP();
+                    this.obstacles.forEach(obs => { this.createExplosion(obs.x + obs.width/2, obs.y + obs.height/2, obs.color); if(obs.isNCPD) this.runStats.ncpdKills++; });
+                    this.score += this.obstacles.length * 50 * p.scoreMultiplier; this.obstacles = [];
+                }
+                
+                if (this.empFlashAlpha > 0) { this.empFlashAlpha -= 2 * dtReal; if (this.empFlashAlpha < 0) this.empFlashAlpha = 0; }
+                if (p.ram === p.maxRam) this.runStats.maxRamTime += dtReal; else this.runStats.maxRamTime = 0;
+                
+                if (p.speed > 50) {
+                    this.score += Math.floor(p.speed * dt * p.scoreMultiplier);
+                    if (this.score < 5000) this.wantedLevel = 1; else if (this.score < 15000) this.wantedLevel = 2;
+                    else if (this.score < 30000) this.wantedLevel = 3; else if (this.score < 50000) this.wantedLevel = 4; else this.wantedLevel = 5;
+                }
+
+                this.spawnTimer -= dt * Math.max(1, (p.speed / 100));
+                if (this.spawnTimer <= 0 && p.speed > 50) {
+                    this.spawnTimer = 0.8 + Math.random() * 1.5; const lane = Math.floor(Math.random() * LANES); const rand = Math.random();
+                    if (rand < 0.05) this.pickups.push(new Pickup(lane, 'ram', this.vpWidth, p.speed));
+                    else if (rand < 0.15) this.pickups.push(new Pickup(lane, 'credit', this.vpWidth, p.speed));
+                    else this.obstacles.push(new Obstacle(lane, Math.random() < (this.wantedLevel * 0.1), this.vpWidth, p.speed));
+                }
+                this.obstacles.forEach(o => o.update(dtReal, p.speed, dt/dtReal, this.wantedLevel, p));
+                this.pickups.forEach(pu => pu.update(dtReal, p.speed, dt/dtReal));
+                this.particles.forEach(pt => pt.update(dtReal, dt/dtReal));
+                this.checkCollisions();
+                
+                this.obstacles = this.obstacles.filter(o => o.y < height + 1000 && o.y > -1000); this.pickups = this.pickups.filter(pu => pu.y < height + 1000 && pu.y > -1000); this.particles = this.particles.filter(pt => pt.life > 0);
+                this.roadOffset += (p.speed * VISUAL_SPEED_MULT) * dt; if (this.roadOffset > 100) this.roadOffset -= 100;
+            }
+            
+            checkCollisions() {
+                let p = this.player;
+                for (let i = this.obstacles.length - 1; i >= 0; i--) {
+                    let obs = this.obstacles[i];
+                    if (p.x < obs.x + obs.width && p.x + p.width > obs.x && p.y < obs.y + obs.height && p.y + p.height > obs.y) {
+                        this.createExplosion(p.x + p.width/2, p.y, obs.color); p.hp -= (obs.isNCPD ? 40 : 20); p.speed *= 0.3; if (!obs.isNCPD) this.runStats.civHits++;
+                        
+                        p.laneTime = 0; p.scoreMultiplier = 1.0;
+                        
+                        this.crashSlowMoTimer = 0.2; 
+                        document.getElementById('main-wrapper').classList.remove('anim-shake');
+                        void document.getElementById('main-wrapper').offsetWidth; 
+                        document.getElementById('main-wrapper').classList.add('anim-shake');
+                        
+                        AudioSys.playCrash(); 
+                        this.obstacles.splice(i, 1); 
+                        
+                        if (p.hp <= 0) { p.dead = true; if (obs.isNCPD && this.wantedLevel === 5 && this.id === 1) { this.runStats.diedToNcpd5Star = true; } }
+                    }
+                }
+                for (let i = this.pickups.length - 1; i >= 0; i--) {
+                    let pu = this.pickups[i];
+                    if (p.x < pu.x + pu.width && p.x + p.width > pu.x && p.y < pu.y + pu.height && p.y + p.height > pu.y) {
+                        if (pu.type === 'credit') { if(!isGuest && this.id === 1) { gameData.credits += 10; saveData(); } this.runStats.creditsGot++; } 
+                        else if (pu.type === 'ram' && p.ram < p.maxRam) { p.ram++; this.updateUI_RAM(); }
+                        this.pickups.splice(i, 1);
+                    }
+                }
+            }
+            
+            draw(ctx) {
+                ctx.save(); ctx.translate(this.offsetX, 0); 
+                ctx.fillStyle = '#070308'; ctx.fillRect(0, 0, this.vpWidth, height);
+                ctx.beginPath(); ctx.rect(0, 0, this.vpWidth, height); ctx.clip();
+                
+                const roadW = this.vpWidth * 0.7, laneW = roadW / LANES, startX = (this.vpWidth - roadW) / 2;
+                ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(255, 0, 255, 0.2)';
+                for (let i = 0; i <= LANES; i++) { ctx.beginPath(); ctx.moveTo(startX + i * laneW, 0); ctx.lineTo(startX + i * laneW, height); ctx.stroke(); }
+                for (let y = (this.roadOffset % 100) - 100; y < height; y += 100) { ctx.beginPath(); ctx.moveTo(startX, y); ctx.lineTo(startX + roadW, y); ctx.stroke(); }
+                
+                this.pickups.forEach(p => p.draw(ctx)); this.obstacles.forEach(o => o.draw(ctx)); 
+                let p = this.player;
+                if(!p.dead) {
+                    if (p.afterimages.length > 0) {
+                        p.afterimages.forEach(img => {
+                            ctx.fillStyle = `rgba(${this.id===1?'0, 240, 255':'255, 0, 60'}, ${img.alpha})`; ctx.shadowBlur = 10; ctx.shadowColor = this.id===1?'#00F0FF':'#FF003C'; ctx.fillRect(img.x, img.y, p.width, p.height);
+                        }); ctx.shadowBlur = 0;
+                    }
+                    ctx.fillStyle = p.color; ctx.shadowBlur = 15; ctx.shadowColor = p.color; ctx.fillRect(p.x, p.y, p.width, p.height);
+                    ctx.fillStyle = '#111'; ctx.fillRect(p.x + 5, p.y + 10, p.width - 10, p.height * 0.4);
+                    ctx.fillStyle = this.id===1 ? '#00F0FF' : '#FF003C'; ctx.fillRect(p.x, p.y + p.height - 10, 10, 5); ctx.fillRect(p.x + p.width - 10, p.y + p.height - 10, 10, 5);
+                }
+                this.particles.forEach(pt => pt.draw(ctx));
+                if (this.empFlashAlpha > 0) { ctx.fillStyle = `rgba(0, 240, 255, ${this.empFlashAlpha})`; ctx.fillRect(0, 0, this.vpWidth, height); }
+                
+                ctx.save();
+                const radarW = 80; const radarH = 150; 
+                const radarX = this.id === 1 ? 20 : this.vpWidth - radarW - 20; 
+                const radarY = height / 2 - radarH / 2;
+                
+                ctx.fillStyle = 'rgba(0, 10, 20, 0.7)'; ctx.strokeStyle = this.id === 1 ? '#00F0FF' : '#FF003C'; ctx.lineWidth = 1;
+                ctx.fillRect(radarX, radarY, radarW, radarH); ctx.strokeRect(radarX, radarY, radarW, radarH);
+                
+                const scanY = radarY + (performance.now() / 10 % radarH);
+                ctx.fillStyle = 'rgba(0, 240, 255, 0.3)'; ctx.fillRect(radarX, scanY, radarW, 2);
+                
+                const playerDotX = radarX + radarW/2; const playerDotY = radarY + radarH - 20;
+                ctx.fillStyle = '#39FF14'; ctx.beginPath(); ctx.arc(playerDotX, playerDotY, 3, 0, Math.PI*2); ctx.fill();
+                
+                this.obstacles.forEach(obs => {
+                    if (obs.isNCPD) {
+                        let relY = (obs.y - p.y) / (height * 1.5); 
+                        if (Math.abs(relY) < 1) {
+                            let dotX = radarX + (obs.lane / LANES * radarW) + (radarW/LANES/2);
+                            let dotY = playerDotY + (relY * radarH * 0.8);
+                            if (dotY >= radarY && dotY <= radarY + radarH) {
+                                ctx.fillStyle = '#FF003C'; ctx.beginPath(); ctx.arc(dotX, dotY, 2, 0, Math.PI*2); ctx.fill();
+                            }
+                        }
+                    }
+                });
+                ctx.restore();
+                ctx.restore(); 
+            }
+        }
+
+        class Obstacle {
+            constructor(lane, isNCPD, vpWidth, playerSpeed) {
+                const laneW = (vpWidth * 0.7) / LANES; this.lane = lane; this.width = laneW * 0.5; this.height = this.width * 1.8; this.x = ((vpWidth - vpWidth * 0.7) / 2) + (this.lane * laneW) + (laneW/2) - (this.width/2);
+                this.isNCPD = isNCPD; this.color = isNCPD ? '#050505' : (Math.random()>0.5 ? '#FF003C' : '#bc13fe'); this.speed = isNCPD ? (280 + Math.random() * 40) : (100 + Math.random() * 50); this.y = (playerSpeed > this.speed) ? -this.height * 2 : height + this.height; this.lightTimer = 0; this.movingLane = false; this.vpWidth = vpWidth;
+            }
+            update(dt, playerSpeed, timeScale, wantedLevel, player) {
+                this.y += ((playerSpeed - this.speed) * VISUAL_SPEED_MULT * dt) * timeScale;
+                if (this.isNCPD) {
+                    this.lightTimer += dt * timeScale;
+                    if (this.y > 0 && this.y < height && Math.random() < 0.02 * timeScale * wantedLevel) { if (!this.movingLane) { if (this.lane < player.lane) this.lane++; else if (this.lane > player.lane) this.lane--; this.movingLane = true; setTimeout(() => this.movingLane = false, 300); } }
+                    const laneW = (this.vpWidth * 0.7) / LANES; this.x += ((((this.vpWidth - this.vpWidth * 0.7) / 2) + (this.lane * laneW) + (laneW/2) - (this.width/2)) - this.x) * 5 * dt * timeScale;
+                }
+            }
+            draw(ctx) {
+                ctx.fillStyle = this.color;
+                if (this.isNCPD) {
+                    ctx.strokeStyle = '#00F0FF'; ctx.lineWidth = 2; ctx.strokeRect(this.x, this.y, this.width, this.height); ctx.fillRect(this.x, this.y, this.width, this.height);
+                    ctx.fillStyle = (Math.floor(this.lightTimer * 10) % 2 === 0) ? '#FF003C' : '#00F0FF'; ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 20; ctx.fillRect(this.x + 2, this.y + 2, this.width - 4, 10); ctx.shadowBlur = 0;
+                } else { ctx.shadowBlur = 10; ctx.shadowColor = this.color; ctx.fillRect(this.x, this.y, this.width, this.height); ctx.shadowBlur = 0; }
+            }
+        }
+
+        class Pickup {
+            constructor(lane, type, vpWidth, playerSpeed) { const laneW = (vpWidth * 0.7) / LANES; this.lane = lane; this.width = 20; this.height = 20; this.x = ((vpWidth - vpWidth * 0.7) / 2) + (this.lane * laneW) + (laneW/2) - (this.width/2); this.y = -50; this.type = type; }
+            update(dt, playerSpeed, timeScale) { this.y += (playerSpeed * VISUAL_SPEED_MULT * dt) * timeScale; }
+            draw(ctx) { 
+                ctx.save(); 
+                ctx.translate(this.x + this.width/2, this.y + this.height/2); 
+                ctx.rotate(performance.now() / 500); 
+                
+                if (this.type === 'credit') {
+                    ctx.fillStyle = ctx.shadowColor = '#FCEE0A'; 
+                    ctx.shadowBlur = 15; 
+                    ctx.fillRect(-this.width/2, -this.height/2, this.width, this.height);
+                } else {
+                    ctx.fillStyle = ctx.shadowColor = '#0066FF'; 
+                    ctx.shadowBlur = 15; 
+                    ctx.fillRect(-this.width/2, -this.height/2, this.width, this.height);
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.shadowBlur = 0;
+                    ctx.fillRect(-this.width/4, -this.height/4, this.width/2, this.height/2);
+                }
+                ctx.restore(); 
+            }
+        }
+
+        class Particle {
+            constructor(x, y, color) { this.x = x; this.y = y; this.vx = (Math.random() - 0.5) * 400; this.vy = (Math.random() - 0.5) * 400; this.life = 1.0; this.color = color; this.size = Math.random() * 5 + 2; }
+            update(dt, timeScale) { this.x += this.vx * dt * timeScale; this.y += this.vy * dt * timeScale; this.life -= 1.5 * dt * timeScale; }
+            draw(ctx) { ctx.globalAlpha = Math.max(0, this.life); ctx.fillStyle = this.color; ctx.fillRect(this.x, this.y, this.size, this.size); ctx.globalAlpha = 1.0; }
+        }
+
+        function unlockAchievement(id) {
+            if (isGuest || gameMode === 'pvp') return; 
+            if (gameData && gameData.achievements && !gameData.achievements.includes(id)) {
+                gameData.achievements.push(id); saveData();
+                AudioSys.playAchievement();
+                const popup = document.getElementById('achievement-popup'); document.getElementById('popup-title').innerText = getAchText(id).name; popup.classList.add('show'); setTimeout(() => popup.classList.remove('show'), 3000);
+            }
+        }
+
+        function checkRuntimeAchievements() {
+            if (isGuest || gameMode === 'pvp' || worlds.length === 0) return;
+            let w = worlds[0]; let p1 = w.player; let s = w.runStats;
+            if (p1.speed >= 380) unlockAchievement('speed_demon'); if (s.sandyTime >= 10) unlockAchievement('time_lord'); if (s.empUses >= 5) unlockAchievement('netrunner'); if (s.ncpdKills >= 10) unlockAchievement('cyberpsycho');
+            if (p1.hp <= 15 && p1.hp > 0 && w.score > 5000) unlockAchievement('near_death'); if (w.score >= 10000 && p1.hp === p1.maxHp) unlockAchievement('untouched'); if (s.civHits >= 3) unlockAchievement('bumper');
+            if (w.score >= 50000) unlockAchievement('road_killer'); if (s.creditsGot >= 20) unlockAchievement('shard_hunter'); if (s.maxRamTime >= 30) unlockAchievement('matrix'); if (gameData && gameData.credits >= 5000) unlockAchievement('corpo_rich');
+            if (s.diedToNcpd5Star) unlockAchievement('system_crash');
+        }
+
+        function updateUI() {
+            worlds.forEach(w => {
+                let p = w.player;
+                document.getElementById(`hp-bar-p${w.id}`).style.width = `${Math.max(0, (p.hp/p.maxHp)*100)}%`;
+                document.getElementById(`sandy-bar-p${w.id}`).style.width = `${(p.sandy / p.maxSandy) * 100}%`;
+                const slots = document.querySelectorAll(`#ram-container-p${w.id} .ram-slot`); slots.forEach((slot, idx) => { if (idx < p.ram) slot.classList.add('active'); else slot.classList.remove('active'); });
+                document.getElementById(`speed-display-p${w.id}`).innerText = Math.floor(p.speed);
+                document.getElementById(`score-display-p${w.id}`).innerText = Math.floor(w.score).toString().padStart(6, '0');
+                
+                const comboDisplay = document.getElementById(`combo-display-p${w.id}`);
+                comboDisplay.innerText = `MULTI x${p.scoreMultiplier.toFixed(1)}`;
+                if (p.scoreMultiplier >= 3.0) comboDisplay.style.color = '#FCEE0A';
+                else if (p.scoreMultiplier >= 2.0) comboDisplay.style.color = '#39FF14';
+                else comboDisplay.style.color = w.id === 1 ? '#00F0FF' : '#FF003C';
+
+                let starsHTML = ''; for(let i=1; i<=5; i++) { starsHTML += (i <= w.wantedLevel) ? '<span class="active">★</span> ' : '<span>★</span> '; } document.getElementById(`wanted-stars-p${w.id}`).innerHTML = starsHTML.trim();
+            });
+            const gridPlane = document.getElementById('grid-plane'); 
+            let maxSpeed = worlds.length > 0 ? Math.max(...worlds.map(w => w.player.speed)) : 0;
+            if (maxSpeed < 0 || isNaN(maxSpeed)) maxSpeed = 0;
+            if (maxSpeed > 5) { gridPlane.style.animationPlayState = 'running'; gridPlane.style.animationDuration = Math.max(0.1, 80 / maxSpeed) + 's'; } else gridPlane.style.animationPlayState = 'paused';
+            
+            AudioSys.updateEngine(maxSpeed);
+        }
+
+        function resize() {
+            width = canvas.width = canvas.clientWidth; height = canvas.height = canvas.clientHeight;
+            if (worlds.length > 0) {
+                if (gameMode === 'single') { worlds[0].vpWidth = width; } 
+                else { worlds[0].vpWidth = width/2; worlds[1].vpWidth = width/2; worlds[1].offsetX = width/2; }
+            }
+        }
+        window.addEventListener('resize', resize);
+
+        function loop(timestamp) {
+            if (!isRunning) return;
+            let dt = (timestamp - lastTime) / 1000; if (dt > 0.1) dt = 0.016; lastTime = timestamp;
+            worlds.forEach(w => w.update(dt));
+
+            checkRuntimeAchievements();
+
+            if (gameMode === 'pvp') {
+                if (worlds[0].player.dead && worlds[1].player.dead) gameOver("draw");
+                else if (worlds[0].player.dead) gameOver("p2_wins");
+                else if (worlds[1].player.dead) gameOver("p1_wins");
+            } else {
+                if (worlds[0].player.dead) gameOver("sys_fail");
+            }
+            if(!isRunning) return; 
+
+            updateUI();
+            ctx.clearRect(0, 0, width, height); worlds.forEach(w => w.draw(ctx));
+            if (gameMode === 'pvp') { ctx.beginPath(); ctx.moveTo(width/2, 0); ctx.lineTo(width/2, height); ctx.strokeStyle = '#FF003C'; ctx.lineWidth = 4; ctx.stroke(); }
+            
+            animFrameId = requestAnimationFrame(loop);
+        }
+
+        function runIntroShowcase(mode, p1CarKey, p2CarKey) {
+            document.getElementById('main-menu').classList.add('hidden'); 
+            document.getElementById('pvp-setup-menu').classList.add('hidden');
+            
+            if (!p1CarKey || !CARS[p1CarKey]) p1CarKey = 'david';
+            if (mode === 'pvp' && (!p2CarKey || !CARS[p2CarKey])) p2CarKey = 'david';
+
+            const introDiv = document.getElementById('intro-showcase');
+            const introName = document.getElementById('intro-name');
+            const introStats = document.getElementById('intro-stats');
+            
+            introDiv.classList.remove('hidden');
+            introName.innerText = `INITIATING // ${getCarName(p1CarKey)}`;
+            let s1 = CARS[p1CarKey];
+            introStats.innerHTML = `SPD [${s1.speed}] ACC [${s1.accel}] HP [${s1.hp}] RAM [${s1.ram}]`;
+            
+            if (mode === 'pvp' && p2CarKey) {
+                let s2 = CARS[p2CarKey];
+                introStats.innerHTML += `<br><br><span style="color:var(--cp-red);">VS</span><br><br>`;
+                introStats.innerHTML += `<span style="color:var(--cp-red);">INITIATING // ${getCarName(p2CarKey)}<br>SPD [${s2.speed}] ACC [${s2.accel}] HP [${s2.hp}] RAM [${s2.ram}]</span>`;
+            }
+
+            setTimeout(() => {
+                introDiv.classList.add('hidden');
+                initGameMode(mode, p1CarKey, p2CarKey);
+            }, 1800);
+        }
+
+        let p1PvpIndex = 0; let p2PvpIndex = 0;
+        function updatePvpSetupUI() {
+            const owned = (gameData && gameData.ownedCars) ? gameData.ownedCars : ['david'];
+            if (owned.length === 0) return;
+            if (p1PvpIndex >= owned.length) p1PvpIndex = 0;
+            if (p2PvpIndex >= owned.length) p2PvpIndex = 0;
+
+            const p1Car = CARS[owned[p1PvpIndex]]; const p2Car = CARS[owned[p2PvpIndex]];
+            document.getElementById('p1-car-name').innerText = getCarName(owned[p1PvpIndex]); document.getElementById('p1-color-preview').style.backgroundColor = p1Car.color;
+            document.getElementById('p2-car-name').innerText = getCarName(owned[p2PvpIndex]); document.getElementById('p2-color-preview').style.backgroundColor = p2Car.color;
+        }
+
+        document.getElementById('p1-prev').addEventListener('click', () => { const owned = (gameData && gameData.ownedCars) ? gameData.ownedCars : ['david']; p1PvpIndex = (p1PvpIndex - 1 + owned.length) % owned.length; updatePvpSetupUI(); });
+        document.getElementById('p1-next').addEventListener('click', () => { const owned = (gameData && gameData.ownedCars) ? gameData.ownedCars : ['david']; p1PvpIndex = (p1PvpIndex + 1) % owned.length; updatePvpSetupUI(); });
+        document.getElementById('p2-prev').addEventListener('click', () => { const owned = (gameData && gameData.ownedCars) ? gameData.ownedCars : ['david']; p2PvpIndex = (p2PvpIndex - 1 + owned.length) % owned.length; updatePvpSetupUI(); });
+        document.getElementById('p2-next').addEventListener('click', () => { const owned = (gameData && gameData.ownedCars) ? gameData.ownedCars : ['david']; p2PvpIndex = (p2PvpIndex + 1) % owned.length; updatePvpSetupUI(); });
+
+        document.getElementById('btn-pvp-setup').addEventListener('click', () => {
+            document.getElementById('main-menu').classList.add('hidden'); document.getElementById('pvp-setup-menu').classList.remove('hidden');
+            const owned = (gameData && gameData.ownedCars) ? gameData.ownedCars : ['david'];
+            p1PvpIndex = owned.indexOf(gameData ? gameData.selectedCar : 'david'); if(p1PvpIndex === -1) p1PvpIndex = 0;
+            p2PvpIndex = 0; updatePvpSetupUI();
+        });
+        document.getElementById('btn-pvp-back').addEventListener('click', () => { document.getElementById('pvp-setup-menu').classList.add('hidden'); document.getElementById('main-menu').classList.remove('hidden'); });
+
+        document.getElementById('btn-pvp-start').addEventListener('click', () => {
+            const owned = (gameData && gameData.ownedCars) ? gameData.ownedCars : ['david'];
+            if (p1PvpIndex >= owned.length) p1PvpIndex = 0;
+            if (p2PvpIndex >= owned.length) p2PvpIndex = 0;
+            runIntroShowcase('pvp', owned[p1PvpIndex], owned[p2PvpIndex]);
+        });
+        
+        document.getElementById('btn-start').addEventListener('click', () => { 
+            const carKey = gameData ? (gameData.selectedCar || 'david') : 'david';
+            runIntroShowcase('single', carKey, null); 
+        });
+
+        function initGameMode(mode, p1Car, p2Car) {
+            p1Car = p1Car || (gameData ? (gameData.selectedCar || 'david') : 'david'); p2Car = p2Car || 'david';
+            gameMode = mode; 
+            
+            worlds = [];
+            resize(); 
+            
+            document.getElementById('hud').classList.remove('hidden');
+            
+            if (gameMode === 'single') {
+                unlockAchievement('first_blood'); document.getElementById('hud-p2').classList.add('hidden');
+                worlds.push(new GameWorld(1, {up:'KeyW', down:'KeyS', left:'KeyA', right:'KeyD', sandy:'Space', hack:'ShiftLeft'}, p1Car, width, 0));
+            } else {
+                document.getElementById('hud-p2').classList.remove('hidden');
+                worlds.push(new GameWorld(1, {up:'KeyW', down:'KeyS', left:'KeyA', right:'KeyD', sandy:'Space', hack:'ShiftLeft'}, p1Car, width/2, 0));
+                worlds.push(new GameWorld(2, {up:'ArrowUp', down:'ArrowDown', left:'ArrowLeft', right:'ArrowRight', sandy:'Enter', hack:'ShiftRight'}, p2Car, width/2, width/2));
+            }
+            isRunning = true; lastTime = performance.now(); 
+            if (animFrameId) cancelAnimationFrame(animFrameId);
+            animFrameId = requestAnimationFrame(loop);
+        }
+
+        function abortGame() {
+            isRunning = false; 
+            if (animFrameId) cancelAnimationFrame(animFrameId);
+            saveData(); AudioSys.stopEngine(); document.getElementById('hud').classList.add('hidden'); document.getElementById('main-menu').classList.remove('hidden'); ctx.clearRect(0,0,width,height);
+        }
+
+        function gameOver(reasonKey) {
+            isRunning = false; 
+            if (animFrameId) cancelAnimationFrame(animFrameId);
+            AudioSys.stopEngine();
+            if (gameMode === 'single' && !isGuest && gameData) { gameData.highScore = Math.max(gameData.highScore || 0, Math.floor(worlds[0].score)); saveData(); }
+            document.getElementById('hud').classList.add('hidden'); document.getElementById('game-over-screen').classList.remove('hidden');
+            let titleText = dict[currentLang]['go_' + reasonKey] || dict[currentLang]['go_sys_fail']; document.getElementById('game-over-text').innerText = titleText;
+            if(gameMode === 'pvp') {
+                document.getElementById('final-score-container').innerHTML = `
+                    <div style="display:flex; gap: 40px; justify-content:center;">
+                        <div>${dict[currentLang]['p1_final']} <br><span style="color:var(--cp-cyan); font-size:2.5rem;">${Math.floor(worlds[0].score)}</span></div>
+                        <div>${dict[currentLang]['p2_final']} <br><span style="color:var(--cp-red); font-size:2.5rem;">${Math.floor(worlds[1].score)}</span></div>
+                    </div>`;
+            } else {
+                document.getElementById('final-score-container').innerHTML = `<span data-i18n="final_score">${dict[currentLang]['final_score'] || '最終評級分數'}</span>: <span style="color: var(--cp-yellow); font-size: 2.5rem; font-weight: bold;">${Math.floor(worlds[0].score)}</span>`;
+            }
+        }
+
+        function renderGarage() {
+            if (!gameData) return;
+            document.getElementById('garage-credits').innerText = gameData.credits || 0;
+            const grid = document.getElementById('garage-grid'); grid.innerHTML = '';
+            
+            const sortMode = document.getElementById('garage-sort-select').value; 
+            
+            let sortedEntries = Object.entries(CARS).sort((a, b) => {
+                let carA = a[1], carB = b[1];
+                let aOwned = (gameData.ownedCars || []).includes(a[0]);
+                let bOwned = (gameData.ownedCars || []).includes(b[0]);
+                
+                if (sortMode === 'owned') {
+                    if (aOwned === bOwned) return carA.price - carB.price;
+                    return aOwned ? -1 : 1;
+                } else if (sortMode === 'speed') {
+                    if (carB.speed === carA.speed) return carA.price - carB.price;
+                    return carB.speed - carA.speed;
+                } else {
+                    return carA.price - carB.price;
+                }
+            });
+            
+            sortedEntries.forEach(([key, car]) => {
+                const isOwned = (gameData.ownedCars || []).includes(key); const isSelected = gameData.selectedCar === key;
+                const card = document.createElement('div'); card.className = `car-card ${isSelected ? 'selected' : ''}`;
+                
+                let btnTextBuy = dict[currentLang]['buy'] || '解鎖'; let btnTextEq = dict[currentLang]['equipped'] || '已配備'; let btnTextGuest = dict[currentLang]['guest_no_buy'] || '訪客無法解鎖';
+                let btnHTML = !isOwned ? `<button class="cp-btn" style="padding: 5px; font-size:0.9rem;" onclick="buyCar('${key}')">${btnTextBuy} ($${car.price})</button>` : `<div style="color:var(--cp-cyan); font-weight: bold; text-align:center; padding: 5px;">${btnTextEq}</div>`;
+                if(isGuest && !isOwned) btnHTML = `<div style="color:#777; font-size:0.8rem; text-align:center;">${btnTextGuest}</div>`;
+
+                card.innerHTML = `<div><div class="car-color-preview" style="background-color: ${car.color};"></div><h3 style="margin-bottom:8px; font-size:0.85rem;">${getCarName(key)}</h3><div class="car-stats">SPD <span>${car.speed}</span> | ACC <span>${car.accel}</span><br>HP <span>${car.hp}</span> | RAM <span>${car.ram}</span></div></div>${btnHTML}`;
+                if (isOwned) { card.onclick = (e) => { if(e.target.tagName !== 'BUTTON') { gameData.selectedCar = key; saveData(); renderGarage(); } }; }
+                grid.appendChild(card);
+            });
+        }
+        document.getElementById('garage-sort-select').addEventListener('change', renderGarage);
+
+        window.buyCar = function(key) {
+            if(isGuest || !gameData) return; const car = CARS[key];
+            if (!gameData.ownedCars) gameData.ownedCars = [];
+            if (gameData.credits >= car.price && !gameData.ownedCars.includes(key)) {
+                gameData.credits -= car.price; gameData.ownedCars.push(key); saveData(); AudioSys.playAchievement();
+                if (gameData.ownedCars.length >= 5) unlockAchievement('collector'); if (gameData.ownedCars.length === 9) unlockAchievement('legend');
+                renderGarage();
+            }
+        };
+
+        function renderAchievements() {
+            if (!gameData) return;
+            const grid = document.getElementById('achievements-grid'); grid.innerHTML = ''; let unlockedCount = 0;
+            Object.entries(ACHIEVEMENTS).forEach(([key, ach]) => {
+                const isUnlocked = !isGuest && (gameData.achievements || []).includes(key); if (isUnlocked) unlockedCount++;
+                const text = getAchText(key); const card = document.createElement('div'); card.className = `ach-card ${isUnlocked ? 'unlocked' : ''}`;
+                card.innerHTML = `<div class="ach-icon">${isUnlocked ? ach.icon : '🔒'}</div><div><div style="font-weight:bold; font-size:0.9rem; color: ${isUnlocked ? 'var(--cp-yellow)' : '#777'};">${text.name}</div><div style="font-size:0.7rem; color: ${isUnlocked ? '#fff' : '#555'};">${text.desc}</div></div>`;
+                grid.appendChild(card);
+            });
+            document.getElementById('ach-progress').innerText = `${unlockedCount}/${Object.keys(ACHIEVEMENTS).length}`;
+        }
+
+        function renderLeaderboard() {
+            const tbody = document.querySelector('#lb-table tbody'); tbody.innerHTML = '';
+            let sortedProfiles = Object.entries(globalData.profiles || {}).filter(([name, data]) => name !== 'GUEST_OVERRIDE').map(([name, data]) => ({ name: name, score: data.highScore || 0 })).sort((a, b) => b.score - a.score).slice(0, 10); 
+            if (sortedProfiles.length === 0) { tbody.innerHTML = `<tr><td colspan="3" style="color:#777;">尚無紀錄 (NO RECORDS)</td></tr>`; return; }
+            sortedProfiles.forEach((profile, index) => { let rankClass = index === 0 ? 'lb-rank-1' : ''; tbody.innerHTML += `<tr><td class="${rankClass}">#${index + 1}</td><td class="${rankClass}">${profile.name}</td><td class="${rankClass}">${profile.score}</td></tr>`; });
+        }
+
+        document.getElementById('btn-login').addEventListener('click', () => {
+            const nameInput = document.getElementById('player-name').value.trim(); if(!nameInput) return;
+            if(!globalData.profiles[nameInput]) globalData.profiles[nameInput] = JSON.parse(JSON.stringify(DEFAULT_PROFILE));
+            currentProfileName = nameInput; gameData = globalData.profiles[currentProfileName]; isGuest = false;
+            document.getElementById('display-profile-name').innerText = nameInput;
+            document.getElementById('login-screen').classList.add('hidden'); document.getElementById('main-menu').classList.remove('hidden'); saveData();
+        });
+
+        document.getElementById('btn-guest').addEventListener('click', () => {
+            currentProfileName = "GUEST_OVERRIDE"; gameData = JSON.parse(JSON.stringify(DEFAULT_PROFILE)); isGuest = true;
+            document.getElementById('display-profile-name').innerText = dict[currentLang]['guest_profile'] || "訪客 (不保留紀錄)";
+            document.getElementById('login-screen').classList.add('hidden'); document.getElementById('main-menu').classList.remove('hidden');
+        });
+
+        document.getElementById('btn-logout').addEventListener('click', () => {
+            currentProfileName = null; gameData = null; document.getElementById('player-name').value = '';
+            document.getElementById('main-menu').classList.add('hidden'); document.getElementById('login-screen').classList.remove('hidden');
+        });
+
+        document.getElementById('btn-format').addEventListener('click', formatMemory);
+        document.getElementById('btn-ingame-exit').addEventListener('click', abortGame);
+        
+        document.getElementById('btn-garage').addEventListener('click', () => { document.getElementById('main-menu').classList.add('hidden'); document.getElementById('garage-menu').classList.remove('hidden'); renderGarage(); });
+        document.getElementById('btn-garage-back').addEventListener('click', () => { document.getElementById('garage-menu').classList.add('hidden'); document.getElementById('main-menu').classList.remove('hidden'); });
+        document.getElementById('btn-achievements').addEventListener('click', () => { document.getElementById('main-menu').classList.add('hidden'); document.getElementById('achievements-menu').classList.remove('hidden'); renderAchievements(); });
+        document.getElementById('btn-ach-back').addEventListener('click', () => { document.getElementById('achievements-menu').classList.add('hidden'); document.getElementById('main-menu').classList.remove('hidden'); });
+        document.getElementById('btn-leaderboard').addEventListener('click', () => { document.getElementById('main-menu').classList.add('hidden'); document.getElementById('leaderboard-menu').classList.remove('hidden'); renderLeaderboard(); });
+        document.getElementById('btn-lb-back').addEventListener('click', () => { document.getElementById('leaderboard-menu').classList.add('hidden'); document.getElementById('main-menu').classList.remove('hidden'); });
+        document.getElementById('btn-help').addEventListener('click', () => { document.getElementById('main-menu').classList.add('hidden'); document.getElementById('help-menu').classList.remove('hidden'); });
+        document.getElementById('btn-help-back').addEventListener('click', () => { document.getElementById('help-menu').classList.add('hidden'); document.getElementById('main-menu').classList.remove('hidden'); });
+
+        document.getElementById('btn-restart').addEventListener('click', () => { 
+            document.getElementById('game-over-screen').classList.add('hidden'); 
+            const owned = (gameData && gameData.ownedCars) ? gameData.ownedCars : ['david'];
+            if (p1PvpIndex >= owned.length) p1PvpIndex = 0;
+            if (p2PvpIndex >= owned.length) p2PvpIndex = 0;
+            
+            if(gameMode === 'single') {
+                const carKey = gameData ? (gameData.selectedCar || 'david') : 'david';
+                runIntroShowcase('single', carKey, null);
+            } else {
+                runIntroShowcase('pvp', owned[p1PvpIndex], owned[p2PvpIndex]);
+            }
+        });
+        
+        document.getElementById('btn-quit').addEventListener('click', () => { document.getElementById('game-over-screen').classList.add('hidden'); document.getElementById('main-menu').classList.remove('hidden'); ctx.clearRect(0,0,width,height); });
+
+        document.getElementById('lang-select').addEventListener('change', (e) => setLanguage(e.target.value));
+        setLanguage(currentLang);
+    </script>
+</body>
+</html>
