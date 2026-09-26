@@ -50,4 +50,4 @@
 
 由於本專案為單一檔案的靜態網頁應用程式，遊玩非常簡單：
 
-點擊網址：
+點擊網址：https://jimchang3481.github.io/NIGHT-CITY-ARCADE-RACING/
