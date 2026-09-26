@@ -21,14 +21,11 @@
 
 ##  遊戲截圖 (Screenshots)
 
-<p align="center">
-  <img src="screenshot_menu.png" alt="主選單畫面" width="48%">
-  <img src="screenshot_gameplay.png" alt="遊戲實機畫面" width="48%">
-</p>
-<p align="center">
-  <img src="screenshot_garage.png" alt="車庫系統" width="48%">
-  <img src="screenshot_pvp.png" alt="雙人對戰模式" width="48%">
-</p>
+| <img src="screenshot_menu.png" width="100%"> | <img src="screenshot_gameplay.png" width="100%"> |
+| :---: | :---: |
+| **主選單畫面** | **遊戲實機畫面** |
+| <img src="screenshot_garage.png" width="100%"> | <img src="screenshot_pvp.png" width="100%"> |
+| **車庫系統** | **雙人對戰模式** |
 
 ##  核心特色 (Key Features)
 
